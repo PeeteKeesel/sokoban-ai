@@ -2,7 +2,10 @@
 
 # Teaching an AI to solve Sokoban
 
-...
+Sokoban is Japanese for warehouse keeper and a traditional video game. The game is a transportation
+puzzle, where the player has to push all boxes in the room on the storage locations (targets). 
+
+![Example World](SokobanExample1)
 
 ## Prior Steps
 To make the environment running some prior steps may need to be done. Either all 
@@ -36,6 +39,21 @@ return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
 The [mpSchrader/gym-sokoban](https://github.com/mpSchrader/gym-sokoban) repository is being used as an environment 
 to train the agent in. 
 
+### Action Space
+```python
+A = {
+    0 : "no operation"
+    1 : "push up" 
+    2 : "push down"
+    3 : "push left"
+    4 : "push right"
+    5 : "move up"
+    6 : "move down" 
+    7 : "move left" 
+    8 : "move right" 
+}
+```
+
 ### Step 
 
 ```python
@@ -62,9 +80,20 @@ with
     info["action.moved_box"]     # did a box was being moved? True: yes, False: no
     ``` 
 
+### `env.room_state`
 
+The matrix `env.room_state` consists of the following elements
+```python
+0 : # brick wall   (outside the game) 
+1 : # black ground (inside the game)
+2 : # goal position for a box 
+3 : # box on a goal position
+4 : # box
+5 : # agent 
+```
 
 ---
+
 
 ## ToDo's
 

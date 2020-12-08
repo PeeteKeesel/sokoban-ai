@@ -267,6 +267,9 @@ class SokobanEnv(gym.Env):
     def get_action_meanings(self):
         return ACTION_LOOKUP
 
+    # ================================================================
+    # My additional methods
+    # ================================================================
     def get_player_position(self):
         return self.player_position
 
