@@ -267,6 +267,27 @@ class SokobanEnv(gym.Env):
     def get_action_meanings(self):
         return ACTION_LOOKUP
 
+    def get_player_position(self):
+        return self.player_position
+
+    def state_after_action(self, action):
+        """
+        Returns the position of the next state, after the agent takes a given action.
+        :param action:
+        :return: [row, col] - indicating the rooms state after an action
+                              if action not feasable: return current state
+                              otherwise:              return next state
+        """
+        change = CHANGE_COORDINATES[(action - 1) % 4]
+        new_position = self.player_position + change
+
+        # Move player if the field in the moving direction is either
+        # an empty field or an empty box target.
+        if self.room_state[new_position[0], new_position[1]] in [1, 2]:
+            return new_position
+
+        return self.player_position
+
 
 ACTION_LOOKUP = {
     0: 'no operation',
