@@ -5,10 +5,12 @@
 Sokoban is Japanese for warehouse keeper and a traditional video game. The game is a transportation
 puzzle, where the player has to push all boxes in the room on the storage locations (targets). 
 
-![Example World](/docs/imgs/SokobanExampleLevel1.png?raw=true)
+| Sokoban-v0 Example | Sokoban-v1 Example | Sokoban-v2 Example |
+| :---: | :---: | :---: 
+| ![v-0](/docs/imgs/Sokoban-v0-Example.png?raw=true) | ![v-1](/docs/imgs/Sokoban-v1-Example.png?raw=true) | ![v-2](/docs/imgs/Sokoban-v2-Example.png?raw=true) |
 
 
-## Prior Steps
+# 2 Prior Steps
 To make the environment running some prior steps may need to be done. Either all 
 or a subset of the following commands need to be run to display the environment.
 
@@ -35,12 +37,12 @@ return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
 
 ---
 
-# Environment
+# 3 Environment
 
 The [mpSchrader/gym-sokoban](https://github.com/mpSchrader/gym-sokoban) repository is being used as an environment 
 to train the agent in. 
 
-### Action Space
+## 3.1 Action Space
 ```python
 A = {
     0 : "no operation"
@@ -55,7 +57,7 @@ A = {
 }
 ```
 
-### Step 
+## 3.2 Step 
 
 ```python
 observation, reward, done, info = env.step(action)
@@ -81,7 +83,7 @@ with
     info["action.moved_box"]     # did a box was being moved? True: yes, False: no
     ``` 
 
-### `env.room_state`
+## 3.3 `env.room_state`
 
 The matrix `env.room_state` consists of the following elements
 ```python
@@ -96,7 +98,7 @@ The matrix `env.room_state` consists of the following elements
 ---
 
 
-## ToDo's
+## 4 ToDo's
 
 - [ ] try out different rl algo's to get sense about the problem
     - [ ] Value Iteration
