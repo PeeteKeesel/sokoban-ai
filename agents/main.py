@@ -9,7 +9,7 @@ from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1, SokobanEnv2
 # Environment and Global Parameters
 # ================================================================
 RANDOM_SEED = 0
-env = SokobanEnv()
+env = SokobanEnv1()
 
 # for reproducibility (since env is getting rendered randomly)
 env.seed(RANDOM_SEED)               # always render the same environment

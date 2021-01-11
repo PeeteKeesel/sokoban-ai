@@ -1,5 +1,3 @@
-
-
 # Teaching an AI to solve Sokoban
 
 Sokoban is Japanese for warehouse keeper and a traditional video game. The game is a transportation
@@ -10,7 +8,7 @@ puzzle, where the player has to push all boxes in the room on the storage locati
 | ![v-0](/docs/imgs/Sokoban-v0-Example.png?raw=true) | ![v-1](/docs/imgs/Sokoban-v1-Example.png?raw=true) | ![v-2](/docs/imgs/Sokoban-v2-Example.png?raw=true) |
 
 
-# 2 Prior Steps
+## 2 Prior Steps
 To make the environment running some prior steps may need to be done. Either all 
 or a subset of the following commands need to be run to display the environment.
 
@@ -37,7 +35,7 @@ return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
 
 ---
 
-# 3 Environment
+## 3 Environment
 
 The [mpSchrader/gym-sokoban](https://github.com/mpSchrader/gym-sokoban) repository is being used as an environment 
 to train the agent in. 
@@ -57,7 +55,7 @@ A = {
 }
 ```
 
-## 3.2 Step 
+### 3.2 Step 
 
 ```python
 observation, reward, done, info = env.step(action)
@@ -83,7 +81,7 @@ with
     info["action.moved_box"]     # did a box was being moved? True: yes, False: no
     ``` 
 
-## 3.3 `env.room_state`
+### 3.3 `env.room_state`
 
 The matrix `env.room_state` consists of the following elements
 ```python
@@ -100,11 +98,20 @@ The matrix `env.room_state` consists of the following elements
 
 ## 4 ToDo's
 
-- [ ] try out different rl algo's to get sense about the problem
-    - [ ] Value Iteration
-    - [ ] Policy Iteration
-    - [ ] Q-Learning
-- [ ] include unit-tests when starting to _really_ implement
-- [ ] How to play with __one__ world to test agents behaviour
+
+- [ ] try to implement __Single Agent__ from _Feng et al., 2020_ ([page 6](https://arxiv.org/pdf/2008.05598v2.pdf))
+    - [ ] implement Resnet for _Learning_
+    - [ ] implement MCTS for _Planning_
+- [ ] try out different search algorithms 
+    - [ ] Backtracking 
+    - [ ] Depth First Search (DFS)
+    - [ ] Breadth First Search (BFS)
+    - [ ] Uniform Cost Search (UCS)
+    - [ ] A* 
+- [ ] implement deadlock detection to the database to check future positions 
+- [ ] train CNN to predict best possible action for a given state  
+- [ ] include unit-tests 
+- [x] How to play with __one__ world to test agents behaviour
 - [ ] Research on what algo's could be efficient
-- [ ] Research on how to handle deadlocks
+
+## 5 Deep Model-Based RL 
