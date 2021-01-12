@@ -102,12 +102,18 @@ The matrix `env.room_state` consists of the following elements
 - [ ] try to implement __Single Agent__ from _Feng et al., 2020_ ([page 6](https://arxiv.org/pdf/2008.05598v2.pdf))
     - [ ] implement Resnet for _Learning_
     - [ ] implement MCTS for _Planning_
+        - [ ] tests
 - [ ] try out different search algorithms 
     - [ ] Backtracking 
+        - [ ] tests
     - [ ] Depth First Search (DFS)
+        - [ ] tests
     - [ ] Breadth First Search (BFS)
+        - [ ] tests
     - [ ] Uniform Cost Search (UCS)
-    - [ ] A* 
+        - [ ] tests
+    - [ ] A*
+        - [ ] tests 
 - [ ] implement deadlock detection to the database to check future positions 
 - [ ] train CNN to predict best possible action for a given state  
 - [ ] include unit-tests 
