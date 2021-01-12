@@ -85,12 +85,12 @@ with
 
 The matrix `env.room_state` consists of the following elements
 ```python
-0 : # brick wall   (outside the game) 
-1 : # black ground (inside the game)
-2 : # goal position for a box 
-3 : # box on a goal position
-4 : # box
-5 : # agent 
+0 : # wall        (outside the game) 
+1 : # empty space (inside the game)
+2 : # box target 
+3 : # box not on target
+4 : # box on target
+5 : # agent/player
 ```
 
 ---

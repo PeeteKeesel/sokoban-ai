@@ -2,6 +2,7 @@ import pyglet
 import time
 import random
 import numpy as np
+from gym_sokoban.envs.room_utils import *
 from gym_sokoban.envs.sokoban_env import *
 from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1, SokobanEnv2
 
@@ -38,11 +39,18 @@ def _demo():
     # let the agent reinforce
     # ----------------------------------------
     for timestep in range(1):  # number of iterations
-        env.render()
+        #env.render()
         time.sleep(0.3)  # to make the agents moves more traceable
 
         print(env.room_state)
-        currentState = env.get_player_position()
+
+        # The current state of the agent
+        current_state = env.player_position
+        print(current_state)
+
+        # Depth-First-Search (DFS): searches through all possible states in the room
+        dfs = depth_first_search(current_state,
+                                 )
 
         # vsAfterActions = np.zeros(len(ACTION_LOOKUP))
         # VMaxAfterAction = 0
@@ -75,6 +83,9 @@ def _demo():
         #
         # print(f"vsMax={np.round(vMax,3)}\n{np.round(V, 3)}\n{pi}")
 
+
+
+        print(env.action_space.sample())
         a = env.action_space.sample()
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
 
@@ -87,12 +98,13 @@ def _demo():
             break
 
         if env._check_if_all_boxes_on_target():
-            print("ALL BOXES ON TAGRTE: Episode finished after {} timesteps".format(timestep + 1))
+            print("ALL BOXES ON TARGET: Episode finished after {} timesteps".format(timestep + 1))
             break
 
     if input():
         env.close()
 
-
+# -------------------------------------------------------------------------------------------------
+# Run the program
 if __name__ == "__main__":
     _demo()

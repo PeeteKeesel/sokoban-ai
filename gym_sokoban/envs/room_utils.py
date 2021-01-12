@@ -6,17 +6,19 @@ import marshal
 def generate_room(dim=(13, 13), p_change_directions=0.35, num_steps=25, num_boxes=3, tries=4, second_player=False):
     """
     Generates a Sokoban room, represented by an integer matrix. The elements are encoded as follows:
-    wall = 0
-    empty space = 1
-    box target = 2
-    box not on target = 3
-    box on target = 4
-    player = 5
+    0 = wall
+    1 = empty space
+    2 = box target empty
+    3 = box off target
+    4 = box on target
+    5 = player
 
-    :param dim:
-    :param p_change_directions:
-    :param num_steps:
-    :return: Numpy 2d Array
+    Arguments:
+        dim                 2d tuple - The dimension of the board.
+        p_change_directions float    - The probability of changing the direction of a walk.
+        num_steps           int      - Number of times to generate a room topology.
+
+    Returns: Numpy 2d Array
     """
     room_state = np.zeros(shape=dim)
     room_structure = np.zeros(shape=dim)
@@ -35,6 +37,9 @@ def generate_room(dim=(13, 13), p_change_directions=0.35, num_steps=25, num_boxe
         room_state = room.copy()
         room_state[room_state == 2] = 4
 
+        print(f"\nroom_structure = \n{room_structure}")
+        print(f"room_state       = \n{room_state}\n")
+
         room_state, score, box_mapping = reverse_playing(room_state, room_structure)
         room_state[room_state == 3] = 4
 
@@ -51,10 +56,12 @@ def room_topology_generation(dim=(10, 10), p_change_directions=0.35, num_steps=1
     """
     Generate a room topology, which consits of empty floors and walls.
 
-    :param dim:
-    :param p_change_directions:
-    :param num_steps:
-    :return:
+    Arguments:
+        dim                 2d Tuple - The dimension of the room.
+        p_change_directions float    - The probability of changing the direction of a walk.
+        num_steps           int      - Number of times to generate a room topology.
+
+    Returns: Numpy 2d Array - The room with the filled integers to indicate where the room elements are.
     """
     dim_x, dim_y = dim
 
@@ -128,9 +135,11 @@ def place_boxes_and_player(room, num_boxes, second_player):
     """
     Places the player and the boxes into the floors in a room.
 
-    :param room:
-    :param num_boxes:
-    :return:
+    Arguments:
+        room      Numpy 2d Array - The room structure.
+        num_boxes int            - The number of boxes to place.
+
+    Returns: Numpy 2d Array - The room with the places player and boxes.
     """
     # Get all available positions
     possible_positions = np.where(room == 1)
@@ -178,15 +187,19 @@ def reverse_playing(room_state, room_structure, search_depth=100):
     """
     This function plays Sokoban reverse in a way, such that the player can
     move and pull boxes.
+
     It ensures a solvable level with all boxes not being placed on a box target.
-    :param room_state:
-    :param room_structure:
-    :param search_depth:
-    :return: 2d array
+
+    Arguments:
+        room_state      Numpy 2d Array - State of the room with walls, empty states, boxes on target and the agent.
+        room_structure  Numpy 2d Array - Represents the current state of the room including movable parts.
+        search_depth    int            - Number of steps to search in depth.
+    Returns:
+        2d array
     """
     global explored_states, num_boxes, best_room_score, best_room, best_box_mapping
 
-    # Box_Mapping is used to calculate the box displacement for every box
+    # box_mapping is used to calculate the box displacement for every box
     box_mapping = {}
     box_locations = np.where(room_structure == 2)
     num_boxes = len(box_locations[0])
@@ -206,15 +219,21 @@ def reverse_playing(room_state, room_structure, search_depth=100):
 def depth_first_search(room_state, room_structure, box_mapping, box_swaps=0, last_pull=(-1, -1), ttl=300):
     """
     Searches through all possible states of the room.
-    This is a recursive function, which stops if the tll is reduced to 0 or
+
+    This is a recursive function, which stops if the ttl is reduced to 0 or
     over 1.000.000 states have been explored.
-    :param room_state:
-    :param room_structure:
-    :param box_mapping:
-    :param box_swaps:
-    :param last_pull:
-    :param ttl:
-    :return:
+
+    Arguments:
+        room_state     Numpy 2d Array - State of the room with walls, empty states, boxes on target and the agent.
+        room_structure Numpy 2d Array - State of the room with walls, empty states and empty box targets.
+                                        The agent is an empty state.
+        box_mapping    dict           - Stores the initial and current position of each box.
+                                        Used to calculate the box displacement for every box.
+        box_swaps                     -
+        last_pull                     -
+        ttl                           - TODO: what is this?
+
+    Returns:
     """
     global explored_states, num_boxes, best_room_score, best_room, best_box_mapping
 
@@ -260,13 +279,18 @@ def depth_first_search(room_state, room_structure, box_mapping, box_swaps=0, las
 def reverse_move(room_state, room_structure, box_mapping, last_pull, action):
     """
     Perform reverse action. Where all actions in the range [0, 3] correspond to
-    push actions and the ones greater 3 are simmple move actions.
-    :param room_state:
-    :param room_structure:
-    :param box_mapping:
-    :param last_pull:
-    :param action:
-    :return:
+    push actions and the ones greater 3 are simple move actions.
+
+    Arguments:
+        room_state     Numpy 2d Array - State of the room with walls, empty states, boxes on target and the agent.
+        room_structure Numpy 2d Array - State of the room with walls, empty states and empty box targets.
+        box_mapping    dict           - Stores the initial and current position of each box.
+                                        Used to calculate the box displacement for every box.
+        last_pull
+        action
+
+    Returns:
+        room_state, box_mapping and last_pull after the reverse move
     """
     player_position = np.where(room_state == 5)
     player_position = np.array([player_position[0][0], player_position[1][0]])
@@ -305,8 +329,12 @@ def box_displacement_score(box_mapping):
     """
     Calculates the sum of all Manhattan distances, between the boxes
     and their origin box targets.
-    :param box_mapping:
-    :return:
+
+    Arguments:
+        box_mapping dict - Stores the initial position of a box as the key and its current position as the value.
+                           Stores this for all boxes on the board.
+
+    Returns: float
     """
     score = 0
     
@@ -350,3 +378,4 @@ CHANGE_COORDINATES = {
     2: (0, -1),
     3: (0, 1)
 }
+

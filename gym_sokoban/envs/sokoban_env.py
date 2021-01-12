@@ -1,9 +1,10 @@
-import gym
-from gym.utils import seeding
+from gym.utils           import seeding
 from gym.spaces.discrete import Discrete
-from gym.spaces import Box
-from .room_utils import generate_room
-from .render_utils import room_to_rgb, room_to_tiny_world_rgb
+from gym.spaces          import Box
+from .room_utils         import generate_room
+from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
+
+import gym
 import numpy as np
 
 
@@ -261,15 +262,19 @@ class SokobanEnv(gym.Env):
     def set_maxsteps(self, num_steps):
         self.max_steps = num_steps
 
+    # ================================================================
+    # Get-methods
+    # ================================================================
+
     def get_action_lookup(self):
         return ACTION_LOOKUP
 
     def get_action_meanings(self):
         return ACTION_LOOKUP
 
-    # ================================================================
-    # My additional methods
-    # ================================================================
+    def get_action_by_key(self, key):
+        return ACTION_LOOKUP[key]
+
     def get_player_position(self):
         return self.player_position
 
