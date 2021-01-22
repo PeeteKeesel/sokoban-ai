@@ -8,7 +8,6 @@ from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1, SokobanEnv2
 
 # ================================================================
 # Environment and Global Parameters
-# ================================================================
 RANDOM_SEED = 0
 env = SokobanEnv1()
 
@@ -27,14 +26,12 @@ ACTION_LOOKUP = env.get_action_lookup()
 
 # ================================================================
 # Algorithm relevant variables
-# ================================================================
 V = np.zeros((10, 10))
-pi = np.full([NROWS, NCOLS], " ", dtype="<U1")
+pi = np.full([NROWS, NCOLS], np.inf, dtype=int)
 # pi = np.full([NROWS, NCOLS], len(ACTION_LOOKUP)*" ", dtype="<U" + str(len(ACTION_LOOKUP)))
 
 
 # ================================================================
-
 def _demo():
     # let the agent reinforce
     # ----------------------------------------
@@ -49,8 +46,8 @@ def _demo():
         print(current_state)
 
         # Depth-First-Search (DFS): searches through all possible states in the room
-        dfs = depth_first_search(current_state,
-                                 )
+        # dfs = depth_first_search(current_state,
+        #                          )
 
         # vsAfterActions = np.zeros(len(ACTION_LOOKUP))
         # VMaxAfterAction = 0
@@ -85,8 +82,9 @@ def _demo():
 
 
 
-        print(env.action_space.sample())
         a = env.action_space.sample()
+        print(a)
+        print(ACTION_LOOKUP[a])
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
 
         # take a step
@@ -104,7 +102,7 @@ def _demo():
     if input():
         env.close()
 
-# -------------------------------------------------------------------------------------------------
+# ================================================================
 # Run the program
 if __name__ == "__main__":
     _demo()
