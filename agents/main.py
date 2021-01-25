@@ -4,7 +4,7 @@ import random
 import numpy as np
 from gym_sokoban.envs.room_utils import *
 from gym_sokoban.envs.sokoban_env import *
-from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1, SokobanEnv2
+from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1
 
 # ================================================================
 # Environment and Global Parameters
@@ -15,35 +15,33 @@ env = SokobanEnv1()
 env.seed(RANDOM_SEED)               # always render the same environment
 np.random.seed(RANDOM_SEED)         # always sample the same random number
 random.seed(RANDOM_SEED)
-env.action_space.seed(RANDOM_SEED)  # always take the same rnadom action
+env.action_space.seed(RANDOM_SEED)  # always take the same random action
 env.reset()
 
+
+# ================================================================
 NROWS, NCOLS = env.dim_room[0], env.dim_room[1]
 ALPHA = .1  # learning rate
 GAMMA = .9  # discount factor
 ACTION_LOOKUP = env.get_action_lookup()
 
-
-# ================================================================
-# Algorithm relevant variables
+# Relevant variables
 V = np.zeros((10, 10))
 pi = np.full([NROWS, NCOLS], np.inf, dtype=int)
 # pi = np.full([NROWS, NCOLS], len(ACTION_LOOKUP)*" ", dtype="<U" + str(len(ACTION_LOOKUP)))
 
 
 # ================================================================
-def _demo():
-    # let the agent reinforce
-    # ----------------------------------------
+def _run():
     for timestep in range(1):  # number of iterations
-        #env.render()
-        time.sleep(0.3)  # to make the agents moves more traceable
+        env.render()#'tiny_rgb_array', scale=2)
+        time.sleep(1)  # to make the agents moves more traceable
 
         print(env.room_state)
 
         # The current state of the agent
         current_state = env.player_position
-        print(current_state)
+        print(f"currentState = {current_state}")
 
         # Depth-First-Search (DFS): searches through all possible states in the room
         # dfs = depth_first_search(current_state,
@@ -80,11 +78,8 @@ def _demo():
         #
         # print(f"vsMax={np.round(vMax,3)}\n{np.round(V, 3)}\n{pi}")
 
-
-
         a = env.action_space.sample()
-        print(a)
-        print(ACTION_LOOKUP[a])
+        print(f"t={timestep} action taken = {a} = {ACTION_LOOKUP[a]}")
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
 
         # take a step
@@ -105,4 +100,4 @@ def _demo():
 # ================================================================
 # Run the program
 if __name__ == "__main__":
-    _demo()
+    _run()

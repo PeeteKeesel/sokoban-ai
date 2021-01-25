@@ -1,16 +1,12 @@
-import unittest
 import numpy as np
 
-from gym_sokoban.envs import room_utils
+from tests.test_dfs import *
 
 
-class TestRoomUtils(unittest.TestCase):
+# ================================================================
+# Global variables.
 
-    ...
-
-
-
-# Environment. Testing room state.
+# Exmaple test environment 1
 ROOM_STATE_L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                           [0, 0, 0, 2, 0, 0, 0, 0, 0],
                           [0, 0, 0, 9, 0, 0, 0, 0, 0],
@@ -23,6 +19,7 @@ ROOM_STATE_L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
 
 OPT_POLICY_L1 = np.array([3, 3, 8, 1, 1, 6, 8, 4, 7, 6, 2])
 
+# Exmaple test environment 2
 ROOM_STATE_L2 = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                           [0, 1, 1, 1, 0, 0, 0, 0, 0],
                           [0, 1, 3, 5, 0, 0, 0, 0, 0],
