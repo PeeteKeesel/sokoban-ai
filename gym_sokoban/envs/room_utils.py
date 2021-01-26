@@ -37,8 +37,8 @@ def generate_room(dim=(13, 13), p_change_directions=0.35, num_steps=25, num_boxe
         room_state = room.copy()
         room_state[room_state == 2] = 4
 
-        print(f"\nroom_structure = \n{room_structure}")
-        print(f"room_state       = \n{room_state}\n")
+        #print(f"\nroom_structure = \n{room_structure}")
+        #print(f"room_state       = \n{room_state}\n")
 
         room_state, score, box_mapping = reverse_playing(room_state, room_structure)
         room_state[room_state == 3] = 4

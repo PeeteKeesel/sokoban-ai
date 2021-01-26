@@ -33,13 +33,14 @@ pi = np.full([NROWS, NCOLS], np.inf, dtype=int)
 
 # ================================================================
 def _run():
-    for timestep in range(1):  # number of iterations
+    actionsTaken = list()
+
+    for timestep in range(1000):  # number of iterations
         env.render()#'tiny_rgb_array', scale=2)
-        time.sleep(1)  # to make the agents moves more traceable
+        # time.sleep(1)  # to make the agents moves more traceable
 
-        print(env.room_state)
+        print(f"room_state=\n{env.room_state}")
 
-        # The current state of the agent
         current_state = env.player_position
         print(f"currentState = {current_state}")
 
@@ -78,9 +79,13 @@ def _run():
         #
         # print(f"vsMax={np.round(vMax,3)}\n{np.round(V, 3)}\n{pi}")
 
+        # Before taking an action: call search algorithm to evaluate the state-action-pairs.
+        # Call MCTS.
+
         a = env.action_space.sample()
         print(f"t={timestep} action taken = {a} = {ACTION_LOOKUP[a]}")
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
+        actionsTaken.append(a)
 
         # take a step
         observation, reward, done, info = env.step(a)
@@ -93,6 +98,11 @@ def _run():
         if env._check_if_all_boxes_on_target():
             print("ALL BOXES ON TARGET: Episode finished after {} timesteps".format(timestep + 1))
             break
+
+
+    ActionsTaken = [ACTION_LOOKUP[a] for a in actionsTaken]
+    print(f"actionsTaken={actionsTaken}")
+    print(f"ActionsTaken={ActionsTaken}")
 
     if input():
         env.close()

@@ -12,7 +12,7 @@ class SokobanEnv1(SokobanEnv):
 
     def __init__(self):
         super(SokobanEnv1, self).__init__(
-            num_boxes=3, max_steps=200
+            num_boxes=3, max_steps=1000
         )
 
 

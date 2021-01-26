@@ -69,9 +69,10 @@ with
 
 - `reward` (__float__): amount of reward achieved by the previous step
 
-- `done` (__boolean__): whether its tome to `reset` the environment. 
+- `done` (__boolean__): whether its time to `reset` the environment. 
     ```python
-    done == True  # episode has terminated  
+    done == True  # either (1) all boxes on target 
+                  #     or (2) max. number of steps reached 
     ``` 
 
 -  `info` (__dict__): diagnostic info useful for debugging. 
@@ -121,3 +122,12 @@ The matrix `env.room_state` consists of the following elements
 - [ ] Research on what algo's could be efficient
 
 ## 5 Deep Model-Based RL 
+
+## Notes 
+
+__How to construct the trees of MCTS?__
+
+- for each move we save the current state of the board, e.g. `(0, 0, 1, ... 4, 5)`
+    - and execute the mcts steps from there 
+    - __save the constructed tree for that state__ in memory !!! 
+    - s.t. we have a tree for all visited board states 
