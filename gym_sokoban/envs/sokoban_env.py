@@ -22,7 +22,7 @@ class SokobanEnv(gym.Env):
 
         # General Configuration
         self.dim_room = dim_room
-        if num_gen_steps == None:
+        if num_gen_steps is None:
             self.num_gen_steps = int(1.7 * (dim_room[0] + dim_room[1]))
         else:
             self.num_gen_steps = num_gen_steps
@@ -31,18 +31,21 @@ class SokobanEnv(gym.Env):
         self.boxes_on_target = 0
 
         # Penalties and Rewards
-        self.penalty_for_step = -0.1
-        self.penalty_box_off_target = -1
-        self.reward_box_on_target = 1
-        self.reward_finished = 10
-        self.reward_last = 0
+        self.penalty_for_step       = -0.1 # Neg. reward for making a step
+        self.penalty_box_off_target = -1   # Neg. reward for pushing box from target
+        self.reward_box_on_target   = 1    # Reward for pushing a box on a target
+        self.reward_finished        = 10   # Reward for finishing the game
+        self.reward_last            = 0    # Reward achieved by the previous step
 
         # Other Settings
-        self.viewer = None
-        self.max_steps = max_steps
-        self.action_space = Discrete(len(ACTION_LOOKUP))
+        self.viewer                 = None
+        self.max_steps              = max_steps
+        self.action_space           = Discrete(len(ACTION_LOOKUP))
         screen_height, screen_width = (dim_room[0] * 16, dim_room[1] * 16)
-        self.observation_space = Box(low=0, high=255, shape=(screen_height, screen_width, 3), dtype=np.uint8)
+        self.observation_space      = Box(low=0,
+                                          high=255,
+                                          shape=(screen_height, screen_width, 3),
+                                          dtype=np.uint8)
         
         if reset:
             # Initialize Room
@@ -53,6 +56,24 @@ class SokobanEnv(gym.Env):
         return [seed]
 
     def step(self, action, observation_mode='rgb_array'):
+        """
+        Performs a step in the Sokoban environment.
+
+        Arguments:
+            action           (int): an action of the ACTION_LOOKUP.
+            observation_mode
+
+         Returns:
+            observation (object):  environment-specific object representing
+                                   the observation of the environment.
+            reward      (float):   amount of reward achieved by the previous
+                                   step.
+            done        (boolean): whether its time to reset the enviroment.
+                                   True, if (1) all boxes are on target
+                                         or (2) max. number of steps is reached
+                                   False, otherwise
+            info        (dict):    diagnostic information useful for debugging.
+        """
         assert action in ACTION_LOOKUP
         assert observation_mode in ['rgb_array', 'tiny_rgb_array', 'raw']
 
@@ -65,11 +86,9 @@ class SokobanEnv(gym.Env):
 
         if action == 0:
             moved_player = False
-
-        # All push actions are in the range of [0, 3]
+        # All push actions are in the range of [0, 4]
         elif action < 5:
             moved_player, moved_box = self._push(action)
-
         else:
             moved_player = self._move(action)
 
@@ -95,8 +114,12 @@ class SokobanEnv(gym.Env):
         """
         Perform a push, if a box is adjacent in the right direction.
         If no box, can be pushed, try to move.
-        :param action:
-        :return: Boolean, indicating a change of the room's state
+
+        Arguments:
+            action (int): an action of the ACTION_LOOKUP.
+
+        Returns:
+             (boolean): indicating a change of the room's state.
         """
         change = CHANGE_COORDINATES[(action - 1) % 4]
         new_position = self.player_position + change
@@ -136,8 +159,12 @@ class SokobanEnv(gym.Env):
     def _move(self, action):
         """
         Moves the player to the next field, if it is not occupied.
-        :param action:
-        :return: Boolean, indicating a change of the room's state
+
+        Parameters:
+            action (int): the action the player wants to make.
+
+        Returns:
+            (boolean): indicating a change of the room's state.
         """
         change = CHANGE_COORDINATES[(action - 1) % 4]
         new_position = self.player_position + change
@@ -158,10 +185,11 @@ class SokobanEnv(gym.Env):
     def _calc_reward(self):
         """
         Calculate Reward Based on
-        :return:
+
+        Returns:
         """
-        # Every step a small penalty is given, This ensures
-        # that short solutions have a higher reward.
+        # Every step a small penalty is given.
+        # This ensures that short solutions have a higher reward.
         self.reward_last = self.penalty_for_step
 
         # count boxes off or on the target
@@ -172,8 +200,8 @@ class SokobanEnv(gym.Env):
         current_boxes_on_target = self.num_boxes - \
                                   np.where(total_targets)[0].shape[0]
 
-        # Add the reward if a box is pushed on the target and give a
-        # penalty if a box is pushed off the target.
+        # Add the reward if a box is pushed on the target and
+        # give a penalty if a box is pushed off the target.
         if current_boxes_on_target > self.boxes_on_target:
             self.reward_last += self.reward_box_on_target
         elif current_boxes_on_target < self.boxes_on_target:
@@ -186,8 +214,16 @@ class SokobanEnv(gym.Env):
         self.boxes_on_target = current_boxes_on_target
 
     def _check_if_done(self):
-        # Check if the game is over either through reaching the maximum number
-        # of available steps or by pushing all boxes on the targets.        
+        """
+        Checks if the game is over. This can either be through
+           (1) reaching the maximum number of available steps or
+        or (2) by pushing all boxes on the targets.
+
+        Returns:
+            (boolean): True, if max steps reached or all boxes
+                             got pushed onto the targets,
+                       False, otherwise.
+        """
         return self._check_if_all_boxes_on_target() or self._check_if_maxsteps()
 
     def _check_if_all_boxes_on_target(self):
@@ -213,8 +249,8 @@ class SokobanEnv(gym.Env):
             return self.reset(second_player=second_player, render_mode=render_mode)
 
         self.player_position = np.argwhere(self.room_state == 5)[0]
-        self.num_env_steps = 0
-        self.reward_last = 0
+        self.num_env_steps   = 0
+        self.reward_last     = 0
         self.boxes_on_target = 0
 
         starting_observation = self.render(render_mode)
@@ -247,7 +283,6 @@ class SokobanEnv(gym.Env):
             super(SokobanEnv, self).render(mode=mode)  # just raise an exception
 
     def get_image(self, mode, scale=1):
-        
         if mode.startswith('tiny_'):
             img = room_to_tiny_world_rgb(self.room_state, self.room_fixed, scale=scale)
         else:

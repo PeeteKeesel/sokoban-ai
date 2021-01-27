@@ -9,7 +9,7 @@ from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1
 # ================================================================
 # Environment and Global Parameters
 RANDOM_SEED = 0
-env = SokobanEnv1()
+env = SokobanEnv1(max_steps=1000)
 
 # for reproducibility (since env is getting rendered randomly)
 env.seed(RANDOM_SEED)               # always render the same environment
@@ -38,51 +38,11 @@ def _run():
     for timestep in range(1000):  # number of iterations
         env.render()#'tiny_rgb_array', scale=2)
         # time.sleep(1)  # to make the agents moves more traceable
+        current_state = env.player_position
+        a = env.action_space.sample()
 
         print(f"room_state=\n{env.room_state}")
-
-        current_state = env.player_position
         print(f"currentState = {current_state}")
-
-        # Depth-First-Search (DFS): searches through all possible states in the room
-        # dfs = depth_first_search(current_state,
-        #                          )
-
-        # vsAfterActions = np.zeros(len(ACTION_LOOKUP))
-        # VMaxAfterAction = 0
-        # asMax = np.array([])
-        #
-        # # take a step : ToDo: for now random, change to rl algo step
-        # for index, action in ACTION_LOOKUP.items():
-        #
-        #     # get next state after taking an action
-        #     nextState = env.state_after_action(index)
-        #
-        #     aobservation, areward, adone, ainfo = env.step(index)
-        #
-        #     bellmannEq = areward + GAMMA * V[nextState[0]][nextState[1]]
-        #
-        #     if bellmannEq >= VMaxAfterAction:
-        #         VMaxAfterAction = bellmannEq
-        #         asMax = np.append(asMax, index)
-        #
-        #     print(f"nextState={nextState} after action={action} : reward:{areward}  {V[nextState[0]][nextState[1]]}  Value={bellmannEq}")
-        #
-        # # update current state value
-        # vMax = VMaxAfterAction
-        # V[currentState[0]][currentState[1]] = vMax
-        #
-        # # find the action which led to the maximal value
-        # # if multiple: choose one randomly
-        # aMax = np.random.choice(asMax)
-        # pi[currentState[0]][currentState[1]] = str(int(aMax)) # int(aMax) * " " + str(int(aMax)) + (len(ACTION_LOOKUP) - int(aMax) - 1) * " "
-        #
-        # print(f"vsMax={np.round(vMax,3)}\n{np.round(V, 3)}\n{pi}")
-
-        # Before taking an action: call search algorithm to evaluate the state-action-pairs.
-        # Call MCTS.
-
-        a = env.action_space.sample()
         print(f"t={timestep} action taken = {a} = {ACTION_LOOKUP[a]}")
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
         actionsTaken.append(a)
@@ -106,6 +66,7 @@ def _run():
 
     if input():
         env.close()
+
 
 # ================================================================
 # Run the program

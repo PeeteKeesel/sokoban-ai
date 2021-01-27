@@ -7,3 +7,8 @@
 .sokoban_cache/
 dist/
 build/
+
+gym_sokoban/envs/boxoban_env.py
+gym_sokoban/envs/sokoban_env_pull.py.py
+gym_sokoban/envs/sokoban_env_two_player.py.py
+gym_sokoban/envs/sokoban_env_variations.py.py

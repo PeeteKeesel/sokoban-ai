@@ -21,10 +21,10 @@ class MctsNode:
         of the current state (the states after all feasible actions).
 
         Arguments:
-            roomState  Tuple[int] - State of the board.
-            SokobanEnv object     - Sokoban gym environment.
-            parent     object     - the parent MctsNode.
-            prevAction int        - the action which led to the current node.
+            roomState  (Tuple[int]): state of the board.
+            SokobanEnv (object):     defines the environment dynamics.
+            parent     (object):     the parent MctsNode.
+            prevAction (int):        the action which led to the current node.
         """
 
         self.roomState = roomState
@@ -41,7 +41,8 @@ class MctsNode:
         """
         Return a list of all children data of the current MctsNode.
 
-        Returns: list - List of the roomStates of the child MctsNodes.
+        Returns:
+            (list): list of the roomStates of the child MctsNodes.
         """
         return [child.data for child in self.children]
 
@@ -49,7 +50,8 @@ class MctsNode:
         """
         Return a list of all Children Nodes of the current Node.
 
-        Returns: list - List of the Child Nodes.
+        Returns:
+            (list): list of the Child Nodes.
         """
         return [child for child in self.children]
 
@@ -65,7 +67,7 @@ class MctsNode:
         Adds a child MctsNode to the current MctsNode.
 
         Arguments:
-            node object - child MctsNodes.
+            node (object): child MctsNodes.
         """
         self.children.append(node)
 
@@ -74,7 +76,7 @@ class MctsNode:
         Adds multiple children MctsNodes to the current MctsNode.
 
         Arguments:
-            nodes list - list of child nodes.
+            nodes (list): list of child nodes.
         """
         for node in nodes:
             self.children.append(node)
@@ -87,17 +89,15 @@ class Mcts:
     root agents.algorithms.MctsNode.
     """
 
-    def __init__(self, boardState: tuple, SokobanEnv: object):
+    def __init__(self, mctsNode):
         """
-        Initializes a MCTS object.
+        Initializes a Monte-Carlo Tree Search object.
 
         Arguments:
-             mctsNode   object - The agents.algorithms.MctsNode to start the
-                                 Monte Carlo Tree Search from.
-             SokobanEnv object - Defines the environment dynamics.
+             mctsNode (object): the agents.algorithms.MctsNode to start the
+                                Monte Carlo Tree Search from.
         """
-        self.root = MctsNode(boardState)
-        self.SokobanEnv = SokobanEnv
+        self.root = mctsNode
 
 
     def take_action(self, action: int):
@@ -106,27 +106,33 @@ class Mcts:
         the MctsNode after this action is the new root MctsNode.
 
         Arguments:
-            action int - Action to take for the root MctsNode.
+            action (int): action to take for the root MctsNode.
         """
-        ...
+        pass
 
 
     def selection(self):
-        # 1. while next-children is not leaf node, select the children with
-        #    best UCT value.
+        """
+        Implements the Selection step of the MCTS.
+        Applies UCB1 until some child nodes are non-existent (empty).
 
-        ...
+        """
+        pass
 
     def simulation(self):
-        ...
+        pass
 
     def expansion(self):
-        ...
+        pass
 
     def backpropagation(self):
-        ...
+        pass
 
-    def do(self, env: List, agentState: tuple) -> None:
+    def ucb1(self):
+        pass
+
+
+    def run_mcts(self, env: List, agentState: tuple) -> None:
         """
         - construct a tree for the given environment state @env if none exists
           yet. If one exists then use this one.
@@ -171,3 +177,4 @@ class Mcts:
             t(N)   - number of times node N was visited.
             t(N_i) - number of times child N_i was visited.
         """
+        pass

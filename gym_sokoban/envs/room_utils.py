@@ -14,11 +14,12 @@ def generate_room(dim=(13, 13), p_change_directions=0.35, num_steps=25, num_boxe
     5 = player
 
     Arguments:
-        dim                 2d tuple - The dimension of the board.
-        p_change_directions float    - The probability of changing the direction of a walk.
-        num_steps           int      - Number of times to generate a room topology.
+        dim                 (tuple): the 2d-dimension of the board.
+        p_change_directions (float): the probability of changing the direction of a walk.
+        num_steps           (int):   number of times to generate a room topology.
 
-    Returns: Numpy 2d Array
+    Returns:
+        (Numpy 2d Array): represents the Sokoban room.
     """
     room_state = np.zeros(shape=dim)
     room_structure = np.zeros(shape=dim)
@@ -57,11 +58,12 @@ def room_topology_generation(dim=(10, 10), p_change_directions=0.35, num_steps=1
     Generate a room topology, which consits of empty floors and walls.
 
     Arguments:
-        dim                 2d Tuple - The dimension of the room.
-        p_change_directions float    - The probability of changing the direction of a walk.
-        num_steps           int      - Number of times to generate a room topology.
+        dim                 (tuple): the 2d-dimension of the room.
+        p_change_directions (float): the probability of changing the direction of a walk.
+        num_steps           (int):   number of times to generate a room topology.
 
-    Returns: Numpy 2d Array - The room with the filled integers to indicate where the room elements are.
+    Returns:
+        (Numpy 2d Array): the room with the filled integers to indicate where the room elements are.
     """
     dim_x, dim_y = dim
 
@@ -136,10 +138,11 @@ def place_boxes_and_player(room, num_boxes, second_player):
     Places the player and the boxes into the floors in a room.
 
     Arguments:
-        room      Numpy 2d Array - The room structure.
-        num_boxes int            - The number of boxes to place.
+        room      (numpy array): the room structure in 2d.
+        num_boxes (int):         the number of boxes to place.
 
-    Returns: Numpy 2d Array - The room with the places player and boxes.
+    Returns:
+        (Numpy 2d Arra): the room with the places player and boxes.
     """
     # Get all available positions
     possible_positions = np.where(room == 1)
@@ -191,11 +194,13 @@ def reverse_playing(room_state, room_structure, search_depth=100):
     It ensures a solvable level with all boxes not being placed on a box target.
 
     Arguments:
-        room_state      Numpy 2d Array - State of the room with walls, empty states, boxes on target and the agent.
-        room_structure  Numpy 2d Array - Represents the current state of the room including movable parts.
-        search_depth    int            - Number of steps to search in depth.
+        room_state      (numpy array): 2d-state of the room with walls, empty states, boxes on target and the agent.
+        room_structure  (numpy array): represents the current state of the room including movable parts.
+        search_depth    (int):         number of steps to search in depth.
     Returns:
-        2d array
+        best_room:        TODO what is best_room?
+        best_room_score:  TODO what is best_room_score?
+        best_box_mapping: TODO what is best_box_mapping?
     """
     global explored_states, num_boxes, best_room_score, best_room, best_box_mapping
 
@@ -224,14 +229,14 @@ def depth_first_search(room_state, room_structure, box_mapping, box_swaps=0, las
     over 1.000.000 states have been explored.
 
     Arguments:
-        room_state     Numpy 2d Array - State of the room with walls, empty states, boxes on target and the agent.
-        room_structure Numpy 2d Array - State of the room with walls, empty states and empty box targets.
-                                        The agent is an empty state.
-        box_mapping    dict           - Stores the initial and current position of each box.
-                                        Used to calculate the box displacement for every box.
-        box_swaps                     -
-        last_pull                     -
-        ttl                           - TODO: what is this?
+        room_state     (numpy array): state of the room with walls, empty states, boxes on target and the agent.
+        room_structure (numpy array): state of the room with walls, empty states and empty box targets.
+                                      The agent is an empty state.
+        box_mapping    (dict):        stores the initial and current position of each box.
+                                      used to calculate the box displacement for every box.
+        box_swaps                     - TODO: what is box_swaps?
+        last_pull                     - TODO: what is last_pull?
+        ttl                           - TODO: what is ttl?
 
     Returns:
     """
@@ -282,12 +287,12 @@ def reverse_move(room_state, room_structure, box_mapping, last_pull, action):
     push actions and the ones greater 3 are simple move actions.
 
     Arguments:
-        room_state     Numpy 2d Array - State of the room with walls, empty states, boxes on target and the agent.
-        room_structure Numpy 2d Array - State of the room with walls, empty states and empty box targets.
-        box_mapping    dict           - Stores the initial and current position of each box.
-                                        Used to calculate the box displacement for every box.
-        last_pull
-        action
+        room_state     (numpy array): state of the room with walls, empty states, boxes on target and the agent.
+        room_structure (numpy array): state of the room with walls, empty states and empty box targets.
+        box_mapping    (dict):        stores the initial and current position of each box.
+                                      Used to calculate the box displacement for every box.
+        last_pull TODO: what is last_pull?
+        action         (int):         the reverse action to agent wants to do.
 
     Returns:
         room_state, box_mapping and last_pull after the reverse move
@@ -331,10 +336,14 @@ def box_displacement_score(box_mapping):
     and their origin box targets.
 
     Arguments:
-        box_mapping dict - Stores the initial position of a box as the key and its current position as the value.
-                           Stores this for all boxes on the board.
+        box_mapping (dict): stores the initial position of a box as the key
+                            and its current position as the value.
+                            Stores this for all boxes on the board.
 
-    Returns: float
+    Returns:
+        (float) sum of all Manhattan distances, between the boxes and their
+                origin box targets. Meaning, how good are the boxes placed
+                right now or how bad are they placed respectively.
     """
     score = 0
     
