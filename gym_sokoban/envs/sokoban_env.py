@@ -8,6 +8,18 @@ import gym
 import numpy as np
 
 
+def convert_room_state_to_output_format(mat):
+    for key, value in LEVEL_FORMAT.items():
+        mat[mat==str(key)] = value
+    return mat
+
+def print_room_state(mat):
+    for i in range(mat.shape[0]):
+        for j in range(mat.shape[1]):
+            print(mat[i][j], end='')
+        print()
+    print()
+
 class SokobanEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array', 'raw']
@@ -261,6 +273,9 @@ class SokobanEnv(gym.Env):
 
         img = self.get_image(mode, scale)
 
+        if mode == 'format':
+            return self.print_room_state_using_format()
+
         if 'rgb_array' in mode:
             return img
 
@@ -297,9 +312,12 @@ class SokobanEnv(gym.Env):
     def set_maxsteps(self, num_steps):
         self.max_steps = num_steps
 
-    # ================================================================
-    # Get-methods
-    # ================================================================
+    def print_room_state_using_format(self):
+        print_room_state(convert_room_state_to_output_format(np.copy(self.room_state).astype('str')))
+
+    ##############################################################################
+    # Get-methods                                                                #
+    ##############################################################################
 
     def get_action_lookup(self):
         return ACTION_LOOKUP
@@ -331,6 +349,70 @@ class SokobanEnv(gym.Env):
 
         return self.player_position
 
+    ##############################################################################
+    # Search Algorithms                                                          #
+    # Those algorithms serve as a comparison to the RL algorithms.               #
+    ##############################################################################
+
+    # ----------------------------------------------------------
+    # Depth first search algorithm
+    def depth_first_search(self):
+        """TODO"""
+        return
+
+    # ----------------------------------------------------------
+    # Breadth first search algorithm
+    def breadth_first_search(self):
+        """TODO"""
+        return
+
+    # ----------------------------------------------------------
+    # Best first search algorithm
+    def best_first_search(self):
+        """TODO"""
+        return
+
+    # ----------------------------------------------------------
+    # A* search algorithm
+    def a_star_search(self):
+        """TODO"""
+        return
+
+    # ----------------------------------------------------------
+    # Uniform cost search algorithm (Dijkstra algorithm)
+    def uniform_cost_search(self):
+        """TODO"""
+        return
+
+    ##############################################################################
+    # RL Algorithms                                                              #
+    ##############################################################################
+
+    # ----------------------------------------------------------
+    # Q-Learning
+    def q_learning(self):
+        """TODO"""
+        return
+
+    # ----------------------------------------------------------
+    # MCTS
+    def monte_carlo_tree_search(self):
+        """TODO"""
+        return
+
+
+##############################################################################
+# Global variables                                                           #
+##############################################################################
+
+LEVEL_FORMAT = {
+    0: '#',  # wall
+    1: ' ',  # empty space
+    2: '.',  # box target
+    3: '$',  # box not on target
+    4: '*',  # box on target
+    5: '@',  # agent
+}
 
 ACTION_LOOKUP = {
     0: 'no operation',
@@ -356,4 +438,4 @@ CHANGE_COORDINATES = {
     3: (0, 1)
 }
 
-RENDERING_MODES = ['rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw']
+RENDERING_MODES = ['rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw', 'format']

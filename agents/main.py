@@ -1,7 +1,11 @@
-import pyglet
 import time
 import random
 import numpy as np
+import os
+os.getcwd()
+import sys
+sys.path.append('my/path/to/module/folder')
+
 from gym_sokoban.envs.room_utils import *
 from gym_sokoban.envs.sokoban_env import *
 from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1
@@ -33,19 +37,28 @@ pi = np.full([NROWS, NCOLS], np.inf, dtype=int)
 
 # ================================================================
 def _run():
+    global counter
+
     actionsTaken = list()
 
-    for timestep in range(1000):  # number of iterations
-        env.render()#'tiny_rgb_array', scale=2)
+    for timestep in range(2):  # number of iterations
+        # env.render('format')#'raw', scale=2)
         # time.sleep(1)  # to make the agents moves more traceable
         current_state = env.player_position
         a = env.action_space.sample()
 
-        print(f"room_state=\n{env.room_state}")
-        print(f"currentState = {current_state}")
-        print(f"t={timestep} action taken = {a} = {ACTION_LOOKUP[a]}")
+        #print(f"room_state=\n{env.room_state}")
+        #print(f"currentState = {current_state}")
+        #print(f"t={timestep} action taken = {a} = {ACTION_LOOKUP[a]}")
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
         actionsTaken.append(a)
+
+        room_structure = env.room_state.copy()
+        room_structure[room_structure == 5] = 1
+        room_structure[room_structure == 4] = 1
+
+        print("DFS starts")
+        depth_first_search(env.room_state, room_structure, env.box_mapping)
 
         # take a step
         observation, reward, done, info = env.step(a)
@@ -59,7 +72,7 @@ def _run():
             print("ALL BOXES ON TARGET: Episode finished after {} timesteps".format(timestep + 1))
             break
 
-
+        env.render('format')
     ActionsTaken = [ACTION_LOOKUP[a] for a in actionsTaken]
     print(f"actionsTaken={actionsTaken}")
     print(f"ActionsTaken={ActionsTaken}")

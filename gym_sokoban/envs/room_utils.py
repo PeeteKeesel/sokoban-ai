@@ -52,7 +52,6 @@ def generate_room(dim=(13, 13), p_change_directions=0.35, num_steps=25, num_boxe
 
     return room_structure, room_state, box_mapping
 
-
 def room_topology_generation(dim=(10, 10), p_change_directions=0.35, num_steps=15):
     """
     Generate a room topology, which consits of empty floors and walls.
@@ -184,6 +183,7 @@ num_boxes = 0
 best_room_score = -1
 best_room = None
 best_box_mapping = None
+counter = 0
 
 
 def reverse_playing(room_state, room_structure, search_depth=100):
@@ -234,16 +234,21 @@ def depth_first_search(room_state, room_structure, box_mapping, box_swaps=0, las
                                       The agent is an empty state.
         box_mapping    (dict):        stores the initial and current position of each box.
                                       used to calculate the box displacement for every box.
-        box_swaps                     - TODO: what is box_swaps?
-        last_pull                     - TODO: what is last_pull?
-        ttl                           - TODO: what is ttl?
+        box_swaps      (int):         Number of times any box was moved.
+        last_pull      (tuple):       position to which the box was pushed, and because of a reverse action it was
+                                      pulled from there.
+        ttl            (int):         time-to-live
 
     Returns:
     """
-    global explored_states, num_boxes, best_room_score, best_room, best_box_mapping
+    global explored_states, num_boxes, best_room_score, best_room, best_box_mapping, counter
+
+    counter = counter + 1
+    if counter % 50_000 == 0:
+        print(counter)
 
     ttl -= 1
-    if ttl <= 0 or len(explored_states) >= 300000:
+    if ttl <= 0 or len(explored_states) >= 300_000:
         return
 
     state_tohash = marshal.dumps(room_state)
@@ -291,7 +296,7 @@ def reverse_move(room_state, room_structure, box_mapping, last_pull, action):
         room_structure (numpy array): state of the room with walls, empty states and empty box targets.
         box_mapping    (dict):        stores the initial and current position of each box.
                                       Used to calculate the box displacement for every box.
-        last_pull TODO: what is last_pull?
+        last_pull      (tuple):       position to which the box was pushed
         action         (int):         the reverse action to agent wants to do.
 
     Returns:
