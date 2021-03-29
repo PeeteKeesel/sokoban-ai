@@ -13,8 +13,8 @@ from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1
 # ================================================================
 # Environment and Global Parameters
 RANDOM_SEED = 0
-env = SokobanEnv1(max_steps=1000)
-
+#env = SokobanEnv1(max_steps=1000)
+env = SokobanEnv(dim_room=(6, 6), num_boxes=1)
 # for reproducibility (since env is getting rendered randomly)
 env.seed(RANDOM_SEED)               # always render the same environment
 np.random.seed(RANDOM_SEED)         # always sample the same random number
@@ -53,12 +53,14 @@ def _run():
         # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
         actionsTaken.append(a)
 
+        print(env.room_state)
+
         room_structure = env.room_state.copy()
         room_structure[room_structure == 5] = 1
         room_structure[room_structure == 4] = 1
 
         print("DFS starts")
-        depth_first_search(env.room_state, room_structure, env.box_mapping)
+        #depth_first_search(env.room_state, room_structure, env.box_mapping)
 
         # take a step
         observation, reward, done, info = env.step(a)

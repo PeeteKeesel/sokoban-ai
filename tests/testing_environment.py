@@ -1,11 +1,28 @@
 import numpy as np
-
-from tests.test_mcts import *
+import unittest
+#from tests.test_mcts import *
 
 
 # ================================================================
 # Global variables.
 
+# First test board.
+#    ######
+#    #### #
+#    ##   #
+#    # BT #
+#    #@  ##
+#    ######
+BOARD_STATE_EASY_1 = np.array([[0, 0, 0, 0, 0, 0],
+                               [0, 1, 1, 1, 1, 0],
+                               [0, 0, 2, 1, 1, 0],
+                               [0, 0, 0, 4, 1, 0],
+                               [0, 0, 0, 5, 1, 0],
+                               [0, 0, 0, 0, 0, 0]])
+
+
+
+# Bigger Environments TODO: maybe remove
 # Example test environment 1
 ROOM_STATE_L1 = np.array([[0, 0, 0, 0, 0, 0, 0, 0, 0],
                           [0, 0, 0, 2, 0, 0, 0, 0, 0],

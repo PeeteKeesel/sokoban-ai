@@ -7,8 +7,22 @@ puzzle, where the player has to push all boxes in the room on the storage locati
 | :---: | :---: | :---: 
 | ![v-0](/docs/imgs/Sokoban-v0-Example.png?raw=true) | ![v-1](/docs/imgs/Sokoban-v1-Example.png?raw=true) | ![v-2](/docs/imgs/Sokoban-v2-Example.png?raw=true) |
 
+The following algorithms will be implemented. As a comparison for the RL approaches we implement 
+basic search algorithms as 
+    
+- Depth-First-Search 
+- Breadth-First-Search
+- Best-First-Search
+- A* 
+- Uniform-Cost-Search
+  
+RL approaches will be 
 
-## 2 Prior Steps
+- AlphaGo approach (MCTS + network)  
+- DQL 
+
+
+## Prior Steps
 To make the environment running some prior steps may need to be done. Either all 
 or a subset of the following commands need to be run to display the environment.
 
@@ -40,7 +54,7 @@ return '/System/Library/Frameworks/OpenGL.framework/OpenGL'
 The [mpSchrader/gym-sokoban](https://github.com/mpSchrader/gym-sokoban) repository is being used as an environment 
 to train the agent in. 
 
-## 3.1 Action Space
+## Action Space
 ```python
 A = {
     0 : "no operation"
@@ -55,7 +69,7 @@ A = {
 }
 ```
 
-### 3.2 Step 
+### Step 
 
 ```python
 observation, reward, done, info = env.step(action)
@@ -82,46 +96,68 @@ with
     info["action.moved_box"]     # did a box was being moved? True: yes, False: no
     ``` 
 
-### 3.3 `env.room_state`
+### `env.room_state`
 
 The matrix `env.room_state` consists of the following elements
 ```python
 0 : # wall        (outside the game) 
 1 : # empty space (inside the game)
 2 : # box target 
-3 : # box not on target
-4 : # box on target
+3 : # box on target
+4 : # box not on target
 5 : # agent/player
 ```
 
 ---
 
 
-## 4 ToDo's
+## ToDo's
 
+#### General steps 
+- [x] `state_after_action(self, a)` 
+    - [x] test 
+- [x] `successors()`
+    - [x] test 
+- [ ] for a given state, build a tree until either max_steps is reached or the game is finished
+    - [ ] test 
 
-- [ ] try to implement __Single Agent__ from _Feng et al., 2020_ ([page 6](https://arxiv.org/pdf/2008.05598v2.pdf))
-    - [ ] implement Resnet for _Learning_
-    - [ ] implement MCTS for _Planning_
-        - [ ] tests
-- [ ] try out different search algorithms 
+#### Comparison Algorithms 
+- [ ] implement different search algorithms 
     - [ ] Backtracking 
         - [ ] tests
     - [ ] Depth First Search (DFS)
         - [ ] tests
     - [ ] Breadth First Search (BFS)
         - [ ] tests
+    - [ ] Best First Search 
+        - [ ] tests 
     - [ ] Uniform Cost Search (UCS)
         - [ ] tests
     - [ ] A*
         - [ ] tests 
+        
+#### RL Algorithm Ideas 
+        
+- [ ] __Single Agent__ from _Feng et al., 2020_ ([page 6](https://arxiv.org/pdf/2008.05598v2.pdf))
+    - [ ] implement Resnet for _Learning_
+    - [ ] implement MCTS for _Planning_
+        - [ ] tests
+- [ ] AlphaGo 
+    - [ ] MCTS 
+    - [ ] Value Network
+    - [ ] Policy Network
+- [ ] Deep-Q-Learning
+    - [ ] neural network 
+    - [ ] tests  
+    
+#### Additional Todos 
+
 - [ ] implement deadlock detection to the database to check future positions 
 - [ ] train CNN to predict best possible action for a given state  
-- [ ] include unit-tests 
 - [x] How to play with __one__ world to test agents behaviour
-- [ ] Research on what algo's could be efficient
+- [x] Research on what algo's to implement
 
-## 5 Deep Model-Based RL 
+## Deep Model-Based RL 
 
 ## Notes 
 

@@ -131,7 +131,6 @@ def room_topology_generation(dim=(10, 10), p_change_directions=0.35, num_steps=1
 
     return level
 
-
 def place_boxes_and_player(room, num_boxes, second_player):
     """
     Places the player and the boxes into the floors in a room.

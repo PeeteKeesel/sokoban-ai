@@ -4,6 +4,9 @@ from gym.spaces          import Box
 from .room_utils         import generate_room
 from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
 
+from copy import deepcopy
+from gym_sokoban.envs.room_utils import reverse_move
+
 import gym
 import numpy as np
 
@@ -133,6 +136,7 @@ class SokobanEnv(gym.Env):
         Returns:
              (boolean): indicating a change of the room's state.
         """
+        print((action - 1) % 4)
         change = CHANGE_COORDINATES[(action - 1) % 4]
         new_position = self.player_position + change
         current_position = self.player_position.copy()
@@ -142,7 +146,6 @@ class SokobanEnv(gym.Env):
         if new_box_position[0] >= self.room_state.shape[0] \
                 or new_box_position[1] >= self.room_state.shape[1]:
             return False, False
-
 
         can_push_box = self.room_state[new_position[0], new_position[1]] in [3, 4]
         can_push_box &= self.room_state[new_box_position[0], new_box_position[1]] in [1, 2]
@@ -193,6 +196,27 @@ class SokobanEnv(gym.Env):
             return True
 
         return False
+
+    def reverse_step(self, last_action):
+        if ACTION_LOOKUP[last_action] != "no operation":
+            self.num_env_steps -= 1
+
+            if last_action < 5:
+                moved_player, moved_box = self._pull(last_action)
+            else:
+                pass
+            moved_player = False
+            moved_box = False
+
+        # no operation was done
+        return
+
+    def _pull(self, last_action):
+        change = CHANGE_COORDINATES[(last_action + 1) % 4]
+        new_position = self.player_position + change
+        current_position = self.player_position.copy()
+
+        return False, False
 
     def _calc_reward(self):
         """
@@ -297,6 +321,19 @@ class SokobanEnv(gym.Env):
         else:
             super(SokobanEnv, self).render(mode=mode)  # just raise an exception
 
+    # def _get_all_feasible_actions(self):
+    #     feasible_actions = []
+    #     print(self.player_position)
+    #     for action in range(self.action_space.n):
+    #
+    #         i_after_action = self.player_position + self.action_equivalent_index_change(action)
+    #         if self.room_state[i_after_action] != 0
+    #
+    #     return feasible_actions
+    #
+    # def action_equivalent_index_change(self, action):
+
+
     def get_image(self, mode, scale=1):
         if mode.startswith('tiny_'):
             img = room_to_tiny_world_rgb(self.room_state, self.room_fixed, scale=scale)
@@ -331,23 +368,57 @@ class SokobanEnv(gym.Env):
     def get_player_position(self):
         return self.player_position
 
-    def state_after_action(self, action):
-        """
-        Returns the position of the next state, after the agent takes a given action.
-        :param action:
-        :return: [row, col] - indicating the rooms state after an action
-                              if action not feasable: return current state
-                              otherwise:              return next state
-        """
-        change = CHANGE_COORDINATES[(action - 1) % 4]
-        new_position = self.player_position + change
+    # Find all feasible successor states
+    def successors(self):
+        succs = []
 
-        # Move player if the field in the moving direction is either
-        # an empty field or an empty box target.
-        if self.room_state[new_position[0], new_position[1]] in [1, 2]:
-            return new_position
+        for act in range(1, len(ACTION_LOOKUP)):
+            state_after_act = self.state_after_action(act)
+            #print(f"act={ACTION_LOOKUP[act]}  feasible={state_after_act['state_changed']}  \nnxt_state=\n{state_after_act['new_state']}")
+            if state_after_act['state_changed']:
+                succs.append(state_after_act['new_state'])
+                #print(f"  len(succs)={len(succs)}")
 
-        return self.player_position
+        return succs
+
+    def state_after_action(self, a):
+        assert a in ACTION_LOOKUP
+
+        change = CHANGE_COORDINATES[(a-1) % 4]
+        cur_pl_pos = self.player_position
+        new_pl_pos = cur_pl_pos + change
+
+        if a == 0:  # no operation
+            return {'new_state': self.room_state, 'state_changed': False}       # no operation
+        if a < 5:   # push operation
+            new_box_pos = new_pl_pos + change
+            if new_box_pos[0] >= self.room_state.shape[0] or new_box_pos[1] >= self.room_state.shape[1]:
+                return {'new_state': self.room_state, 'state_changed': False}   # un-successful push operation
+
+            can_push_box  = self.room_state[tuple(new_pl_pos)]  in [3, 4]
+            can_push_box &= self.room_state[tuple(new_box_pos)] in [1, 2]
+            if can_push_box:
+                new_box_pos, old_box_pos = tuple(new_box_pos), tuple(new_pl_pos)
+                new_room_state = self.room_state.copy()
+                new_room_state[tuple(new_pl_pos)] = 5
+                new_room_state[tuple(cur_pl_pos)] = 1
+
+                if self.room_state[new_box_pos] == 2:
+                    new_room_state[new_box_pos] = 3     # box on target state
+                else:
+                    new_room_state[new_box_pos] = 4     # feasible push
+
+                return {'new_state': new_room_state, 'state_changed': True}     # successful push operation
+            return {'new_state': self.room_state, 'state_changed': False}       # un-successful push operation
+        else:       # move operation
+            if self.room_state[tuple(new_pl_pos)] not in [0, 4]:
+                new_room_state = self.room_state.copy()
+                new_room_state[tuple(new_pl_pos)] = 5
+                new_room_state[tuple(cur_pl_pos)] = 1
+
+                return {'new_state': new_room_state, 'state_changed': True}     # successful move operation
+            else:
+                return {'new_state': self.room_state, 'state_changed': False}   # un-successful move operation
 
     ##############################################################################
     # Search Algorithms                                                          #
@@ -356,9 +427,59 @@ class SokobanEnv(gym.Env):
 
     # ----------------------------------------------------------
     # Depth first search algorithm
-    def depth_first_search(self):
-        """TODO"""
-        return
+    def depth_first_search_2(self, print_steps=None):
+        """
+        @param board: a Board object
+        @param print_steps: flag to print intermediate steps
+        @return (records, board)
+            records: a dictionary keeping track of necessary statistics
+            board: a copy of the board at the finished state.
+                Contains an array of all moves performed.
+        Performs a depth first search on the sokoban board.
+        Doesn't add duplicate nodes to the stack so as to prevent looping.
+        """
+        records = {
+            'node' : 0,
+            'repeat' : 0,
+            'fringe' : 0,
+            'explored' : set()
+        }
+
+        if print_steps:
+            print('repeat\tseen')
+
+        if self._check_if_done(): # board.finished():    # check if initial state is complete
+            return records, self
+
+        board_queue = [self]   # initialize queue
+
+        while True:
+            if print_steps:
+                print("{}\t{}".format(records['repeat'], len(records['explored'])))
+
+            if not board_queue: # if empty queue, fail
+                print(records)
+                raise Exception('Solution not found.')
+
+            node_board = board_queue.pop(0)
+            records['explored'].add(hash(node_board))
+            records['fringe'] = len(board_queue)
+
+            if node_board.finished():   # if finished, return
+                return records, node_board
+
+            choices = node_board.moves_available()
+            if not choices:     # if no options
+                board_queue.pop(0)
+            else:               # regular
+                for direction, cost in choices:
+                    records['node'] += 1
+                    child_board = deepcopy(node_board).move(direction)
+
+                    if hash(child_board) not in records['explored'] and child_board not in board_queue:
+                        board_queue.insert(0, child_board)
+                    else:
+                        records['repeat'] += 1
 
     # ----------------------------------------------------------
     # Breadth first search algorithm
@@ -401,6 +522,53 @@ class SokobanEnv(gym.Env):
         return
 
 
+
+
+class Search(gym.Env):
+    def __init__(self, env, tree):
+        self.env = env
+        self.tree = tree
+
+    # Build a tree using DFS. Start from a node (=board-state) and choose actions
+    # until either (1) max number of steps achieved or (2) final state is reached.
+    def depth_first_search(self, discovered, step, found: bool = False):
+        if self.tree.data not in discovered:
+            discovered.add(self.tree.data)
+
+            # found the solution
+            if self.env._check_if_done():
+                found = True
+                print(f"Solution found at step {step}")
+                return found
+            # continue the search
+            else:
+                self.add_children_nodes()
+
+        return
+
+    def add_children_nodes(self):
+        # get all actions possible from the current state
+        print(self.env.room_state)
+        print(self.env.player_position)
+        print(self.env.action_space)
+
+        # 1. Get all possible actions
+        # 2. take action & if its not "no operation", add it to the tree
+        for action in range(1, len(ACTION_LOOKUP.keys())):
+            print(self.env.room_state)
+
+            # take a step
+            observation, reward, done, info = self.env.step(action)
+            print(info)
+            # take the action
+            print(action)
+            # reverse the action
+
+            # reverse the step
+
+
+
+
 ##############################################################################
 # Global variables                                                           #
 ##############################################################################
@@ -408,9 +576,9 @@ class SokobanEnv(gym.Env):
 LEVEL_FORMAT = {
     0: '#',  # wall
     1: ' ',  # empty space
-    2: '.',  # box target
-    3: '$',  # box not on target
-    4: '*',  # box on target
+    2: 'T',  # box target
+    3: '*',  # box on target
+    4: 'B',  # box not on target
     5: '@',  # agent
 }
 
@@ -424,6 +592,18 @@ ACTION_LOOKUP = {
     6: 'move down',
     7: 'move left',
     8: 'move right',
+}
+
+ACTION_LOOKUP_CHARS = {
+    0: 'n',
+    1: 'U',
+    2: 'D',
+    3: 'L',
+    4: 'R',
+    5: 'u',
+    6: 'd',
+    7: 'l',
+    8: 'r',
 }
 
 # Moves are mapped to coordinate changes as follows
