@@ -242,9 +242,9 @@ def depth_first_search(room_state, room_structure, box_mapping, box_swaps=0, las
     """
     global explored_states, num_boxes, best_room_score, best_room, best_box_mapping, counter
 
-    counter = counter + 1
-    if counter % 50_000 == 0:
-        print(counter)
+    #counter = counter + 1
+    #if counter % 50_000 == 0:
+    #   print(counter)
 
     ttl -= 1
     if ttl <= 0 or len(explored_states) >= 300_000:

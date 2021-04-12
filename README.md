@@ -113,20 +113,26 @@ The matrix `env.room_state` consists of the following elements
 
 ## ToDo's
 
-#### General steps 
+#### General 
 - [x] `state_after_action(self, a)` 
     - [x] test 
 - [x] `successors()`
     - [x] test 
-- [ ] for a given state, build a tree until either max_steps is reached or the game is finished
+- [x] `set_children()`
+    - [x] test
+- [x] `get_children()`
+    - [x] test
+- [ ] class structure
+    - [ ] tests
+- [ ] for a given state, build a game tree until either max_steps is reached or the game is finished
     - [ ] test 
 
 #### Comparison Algorithms 
 - [ ] implement different search algorithms 
     - [ ] Backtracking 
         - [ ] tests
-    - [ ] Depth First Search (DFS)
-        - [ ] tests
+    - [x] Depth First Search (DFS)
+        - [x] tests
     - [ ] Breadth First Search (BFS)
         - [ ] tests
     - [ ] Best First Search 
@@ -152,10 +158,14 @@ The matrix `env.room_state` consists of the following elements
     
 #### Additional Todos 
 
-- [ ] implement deadlock detection to the database to check future positions 
+- [ ] implement deadlock detection
 - [ ] train CNN to predict best possible action for a given state  
 - [x] How to play with __one__ world to test agents behaviour
 - [x] Research on what algo's to implement
+
+#### Optional Tasks 
+
+- [ ] Deadlock detection (helps making the game tree sparser)
 
 ## Deep Model-Based RL 
 

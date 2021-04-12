@@ -14,7 +14,7 @@ from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1
 # Environment and Global Parameters
 RANDOM_SEED = 0
 #env = SokobanEnv1(max_steps=1000)
-env = SokobanEnv(dim_room=(6, 6), num_boxes=1)
+env = SokobanEnv(dim_room=(8, 8), num_boxes=1)
 # for reproducibility (since env is getting rendered randomly)
 env.seed(RANDOM_SEED)               # always render the same environment
 np.random.seed(RANDOM_SEED)         # always sample the same random number
@@ -75,6 +75,8 @@ def _run():
             break
 
         env.render('format')
+        #env.render('tiny_rgb_array', scale=scale_tiny)
+
     ActionsTaken = [ACTION_LOOKUP[a] for a in actionsTaken]
     print(f"actionsTaken={actionsTaken}")
     print(f"ActionsTaken={ActionsTaken}")
