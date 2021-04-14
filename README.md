@@ -126,14 +126,16 @@ The matrix `env.room_state` consists of the following elements
     - [ ] tests
 - [ ] for a given state, build a game tree until either max_steps is reached or the game is finished
     - [ ] test 
+- [ ] clean code 
+- [ ] track metrics to separate file for later plotting
 
 #### Comparison Algorithms 
 - [ ] implement different search algorithms 
     - [ ] Backtracking 
         - [ ] tests
     - [x] Depth First Search (DFS)
-        - [x] tests
-    - [ ] Breadth First Search (BFS)
+        - [ ] tests
+    - [x] Breadth First Search (BFS)
         - [ ] tests
     - [ ] Best First Search 
         - [ ] tests 
@@ -145,13 +147,12 @@ The matrix `env.room_state` consists of the following elements
 #### RL Algorithm Ideas 
         
 - [ ] __Single Agent__ from _Feng et al., 2020_ ([page 6](https://arxiv.org/pdf/2008.05598v2.pdf))
-    - [ ] implement Resnet for _Learning_
+    - [ ] implement Resnets/ConvNets for _Learning_
     - [ ] implement MCTS for _Planning_
         - [ ] tests
 - [ ] AlphaGo 
     - [ ] MCTS 
-    - [ ] Value Network
-    - [ ] Policy Network
+    - [ ] Convolutional Neural Network 
 - [ ] Deep-Q-Learning
     - [ ] neural network 
     - [ ] tests  

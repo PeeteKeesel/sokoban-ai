@@ -86,7 +86,7 @@ class MctsNode:
 class Mcts:
     """
     Class containing logic to execute Monte Carlo Tree Search from a given
-    root agents.algorithms.MctsNode.
+    root src.algorithms.MctsNode.
     """
 
     def __init__(self, mctsNode):
@@ -94,7 +94,7 @@ class Mcts:
         Initializes a Monte-Carlo Tree Search object.
 
         Arguments:
-             mctsNode (object): the agents.algorithms.MctsNode to start the
+             mctsNode (object): the src.algorithms.MctsNode to start the
                                 Monte Carlo Tree Search from.
         """
         self.root = mctsNode

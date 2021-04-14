@@ -43,7 +43,7 @@ def _run():
 
     for timestep in range(2):  # number of iterations
         # env.render('format')#'raw', scale=2)
-        # time.sleep(1)  # to make the agents moves more traceable
+        # time.sleep(1)  # to make the src moves more traceable
         current_state = env.player_position
         a = env.action_space.sample()
 

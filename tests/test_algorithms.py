@@ -2,22 +2,25 @@ import random
 import time
 import numpy as np
 
-from gym_sokoban.envs.sokoban_env import SokobanEnv, ACTION_LOOKUP, ACTION_LOOKUP_CHARS, \
-    depth_first_search, breadth_first_search
-from tests.testing_environment import unittest
+from gym_sokoban.envs.sokoban_env   import SokobanEnv, ACTION_LOOKUP, ACTION_LOOKUP_CHARS
+from tests.testing_environment      import unittest
+from src.algorithms                 import depth_first_search    as dfs
+from src.algorithms                 import breadth_first_search  as bfs
+from src.algorithms                 import uniform_cost_search   as ucs
+
 
 RANDOM_SEED = 0
 
 
 # ================================================================
-class TestSearches(unittest.TestCase):
+class TestAlgorithms(unittest.TestCase):
 
     # def __init__(self, methodName: str = ...):
     #     super().__init__(methodName)
     #     self.mock_env = None
 
     def setUp(self):
-        self.mock_env = SokobanEnv(dim_room=(6, 6), num_boxes=3)
+        self.mock_env = SokobanEnv(dim_room=(10, 10), num_boxes=2)
 
         self.mock_env.seed(RANDOM_SEED)
         np.random.seed(RANDOM_SEED)
@@ -118,20 +121,54 @@ class TestSearches(unittest.TestCase):
          'R', 'l', 'l', 'd', 'r', 'r', 'd', 'l', 'l', 'l']
 
         o_6x6 = ['d', 'L', 'r', 'u', 'L', 'r', 'd', 'l', 'd', 'd', 'r', 'U', 'l', 'u', 'u', 'L']
-
-        o_8x8 = ['r', 'u', 'u', 'l', 'l', 'D', 'l', 'd', 'R', 'l', 'u', 'r', 'u', 'r', 'r', 'd', 'd', 'L', 'U', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'u', 'R', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'U', 'l', 'l', 'd', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'U', 'd', 'l', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'l', 'l', 'u', 'r', 'r', 'u', 'U', 'l', 'D', 'r', 'd', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'L', 'r', 'u', 'u', 'l', 'l', 'd', 'R', 'd', 'r', 'U', 'U', 'U', 'l', 'u', 'R']
-
         o_6x6_bfs = ['L', 'L', 'R', 'R', 'D', 'L', 'D', 'D', 'R', 'U']
 
-        o = o_6x6_bfs
+        o_8x8 = ['r', 'u', 'u', 'l', 'l', 'D', 'l', 'd', 'R', 'l', 'u', 'r', 'u', 'r', 'r', 'd', 'd', 'L', 'U', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'u', 'R', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'U', 'l', 'l', 'd', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'U', 'd', 'l', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'l', 'l', 'u', 'r', 'r', 'u', 'U', 'l', 'D', 'r', 'd', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'L', 'r', 'u', 'u', 'l', 'l', 'd', 'R', 'd', 'r', 'U', 'U', 'U', 'l', 'u', 'R']
+        o_8x8_ucs = ['U', 'D', 'L', 'L', 'U', 'R', 'U', 'R', 'L', 'D', 'D', 'R', 'R', 'U', 'L', 'R', 'U', 'L', 'D', 'D', 'L', 'L', 'U', 'R', 'R', 'U', 'R', 'U', 'U', 'L', 'D', 'D', 'L', 'D', 'D', 'R', 'R', 'U', 'L', 'R', 'U', 'L', 'D', 'D', 'L', 'L', 'U', 'R', 'D', 'R', 'U', 'R', 'U', 'U', 'L', 'D', 'R', 'D', 'L', 'U', 'U', 'U', 'R', 'L', 'D', 'D', 'L', 'D']
+        o_10x10_ucs = ['R', 'R', 'U', 'R', 'D', 'L', 'U', 'U', 'R', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'L', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'R', 'D', 'L', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'R', 'U', 'U', 'R', 'R', 'D', 'L', 'L', 'D', 'L', 'D', 'R', 'D', 'L', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'D', 'L', 'D', 'L', 'L', 'U', 'U', 'R', 'R', 'D', 'R', 'U']
+
+        o = o_10x10_ucs
 
         for a in o:
             self.mock_env.render()
-            time.sleep(0.3)
+            time.sleep(0.1)
             i = list(ACTION_LOOKUP_CHARS.keys())[list(ACTION_LOOKUP_CHARS.values()).index(a)]
             self.mock_env.step(i)
         self.mock_env.render()
         time.sleep(30)
+
+    # def test_set_children(self):
+    #     self.setUp()
+    #     searches = Searches(self.mock_env)
+    #
+    #     self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
+    #     self.assertTrue(np.alltrue(searches.env.room_state == INITIAL_ROOM_STATE))
+    #     print(self.mock_env.room_state)
+    #
+    #     # expected successor state after action 'move right'
+    #     expected_succ_after_r = np.array([[0, 0, 0, 0, 0, 0],
+    #                                       [0, 1, 1, 1, 1, 0],
+    #                                       [0, 0, 2, 4, 1, 0],
+    #                                       [0, 0, 0, 5, 1, 0],
+    #                                       [0, 0, 0, 1, 1, 0],
+    #                                       [0, 0, 0, 0, 0, 0]])
+    #     # expected successor state after action 'push up'
+    #     expected_succ_after_U = np.array([[0, 0, 0, 0, 0, 0],
+    #                                       [0, 1, 1, 1, 1, 0],
+    #                                       [0, 0, 2, 1, 1, 0],
+    #                                       [0, 0, 0, 4, 1, 0],
+    #                                       [0, 0, 0, 1, 5, 0],
+    #                                       [0, 0, 0, 0, 0, 0]])
+    #
+    #
+    #     # children = self.mock_env.set_children()
+    #     children = searches.set_children()
+    #     self.assertEqual(len(children), len(ACTION_LOOKUP.keys()), "Total length should be 9")
+    #
+    #     print(children)
+    #     feasible_children = [child for child in children if child is not None]
+    #     self.assertEqual(len(feasible_children), 2, "length of elements not None should be 2")
+    #     self.assertTrue(np.array_equal([expected_succ_after_r, expected_succ_after_U], feasible_children))
 
     def test_depth_first_search(self):
         self.setUp()
@@ -139,54 +176,33 @@ class TestSearches(unittest.TestCase):
         print(self.mock_env.print_room_state_using_format())
 
         start = time.time()
-        metrics, node_env = depth_first_search(self.mock_env, print_steps=True)
+        metrics, node_env = dfs(self.mock_env, print_steps=True)
         end = time.time()
 
         print(f'runtime: {round(end - start, 4)} seconds')
-
-
-    def test_set_children(self):
-        self.setUp()
-        searches = Searches(self.mock_env)
-
-        self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
-        self.assertTrue(np.alltrue(searches.env.room_state == INITIAL_ROOM_STATE))
-        print(self.mock_env.room_state)
-
-        # expected successor state after action 'move right'
-        expected_succ_after_r = np.array([[0, 0, 0, 0, 0, 0],
-                                          [0, 1, 1, 1, 1, 0],
-                                          [0, 0, 2, 4, 1, 0],
-                                          [0, 0, 0, 5, 1, 0],
-                                          [0, 0, 0, 1, 1, 0],
-                                          [0, 0, 0, 0, 0, 0]])
-        # expected successor state after action 'push up'
-        expected_succ_after_U = np.array([[0, 0, 0, 0, 0, 0],
-                                          [0, 1, 1, 1, 1, 0],
-                                          [0, 0, 2, 1, 1, 0],
-                                          [0, 0, 0, 4, 1, 0],
-                                          [0, 0, 0, 1, 5, 0],
-                                          [0, 0, 0, 0, 0, 0]])
-
-
-        # children = self.mock_env.set_children()
-        children = searches.set_children()
-        self.assertEqual(len(children), len(ACTION_LOOKUP.keys()), "Total length should be 9")
-
-        print(children)
-        feasible_children = [child for child in children if child is not None]
-        self.assertEqual(len(feasible_children), 2, "length of elements not None should be 2")
-        self.assertTrue(np.array_equal([expected_succ_after_r, expected_succ_after_U], feasible_children))
 
     def test_breadth_first_search(self):
         self.setUp()
 
         opt_sol_expected = ['U', 'r', 'u', 'L']
         start = time.time()
-        metrics, node_env = breadth_first_search(self.mock_env, print_steps=True)
+        metrics, node_env = bfs(self.mock_env, print_steps=True)
         end = time.time()
 
         print(f'runtime: {round(end - start, 4)} seconds')
+
+    def test_uniform_cost_search(self):
+        print("test_uniform_cost_search")
+        print(self.mock_env.room_state)
+
+        self.setUp()
+
+        start = time.time()
+        _, _ = ucs(self.mock_env, print_steps=True)
+        end = time.time()
+
+        print(f'runtime: {round(end - start, 4)} seconds')
+
 
     def test_temp(self):
         self.setUp()
