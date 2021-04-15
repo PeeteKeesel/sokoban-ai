@@ -1,8 +1,14 @@
 from copy               import deepcopy
 from gym_sokoban.envs   import SokobanEnv
 
-def uniform_cost_search(env: SokobanEnv, print_steps: bool=None):
-    """Uninformed search algorithm."""
+def a_star_search(env: SokobanEnv, print_steps: bool=None):
+    """Informed search algorithm / Best first search.
+    b = branching factor
+    d = depth
+
+    Time: O(|E|) = (b^d)
+    Space: O(|V|) = O(b^d)
+    """
 
     metrics = {
         'no_of_nodes_discovered': 0,    # the total number of discovered nodes. Including repeated ones.
@@ -14,58 +20,13 @@ def uniform_cost_search(env: SokobanEnv, print_steps: bool=None):
     if env._check_if_done():
         return metrics, env
 
-    env_queue = PriorityQueueUcs()  # initialize a priority queue for ucs
-    env_queue.push(0, env)
+    env_queue = PriorityQueueAStar()  # initialize a priority queue for A star
+    env_queue.push(0, env.manhattan(), env)
     metrics['no_of_nodes_discovered'] += 1
-    while True:         # while the queue is not empty
-
-        if not env_queue:
-            raise Exception('uniform_cost_search(): Solution NOT FOUND! Empty environment queue.')
-
-        node_env_cost, node_env = env_queue.pop()   # get the environment with the lowest cost
-
-        if node_env._check_if_all_boxes_on_target():
-            print("------------------------------------------------------------------------------------\n" +
-                  f"uniform_cost_search(): Solution FOUND! Got {len(node_env.action_trajectory)} steps\n" +
-                  f"{node_env.action_trajectory}\n" +
-                  f"discovered: {metrics['no_of_nodes_discovered']}\n" +
-                  f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
-                  f"{len(metrics['nodes_explored'])}\n" +
-                  f"{node_env.room_state}")
-            return metrics, node_env
-
-        if node_env._check_if_maxsteps():
-            #print("Maximal number of steps reached!")
-            continue
-
-        metrics['nodes_explored'].add(tuple(node_env.room_state.flatten()))
-        children = node_env.get_children()
-
-        if not [child for child in children if child is not None]:
-            env_queue.pop()  # No children exist which are not None
-
-        else:
-            for action, child in enumerate(children):
-                if print_steps:
-                    if metrics["no_of_nodes_discovered"] % 10000 == 0:
-                        print(f'no_of_nodes_discovered: {metrics["no_of_nodes_discovered"]}')
-
-                child_env       = deepcopy(node_env)      # copy the environment to take a "virtual" step
-                _, reward, _, _ = child_env.step(action)  # take a step in the "virtual" environment
-                metrics['no_of_nodes_discovered'] += 1
-
-                if tuple(child_env.room_state.flatten()) not in metrics['nodes_explored']:
-                    if child_env not in env_queue.queue:
-                        env_queue.push(node_env_cost + reward, child_env)
-                    else:
-                        env_queue.update_cost(node_env_cost + reward, child_env)  # todo: kann das nicht ein rewards aus einer ganz anderen trajektorie sein?
-                        metrics['no_of_nodes_repeated'] += 1
-                else:
-                    metrics['no_of_nodes_repeated'] += 1
 
 
 """Ordered queue by cost of being in a particular room state."""
-class PriorityQueueUcs:
+class PriorityQueueAStar:
     def __init__(self):
         """
         A PriorityQueue object consists of a queue and board.

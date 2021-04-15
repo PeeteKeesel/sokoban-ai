@@ -4,6 +4,9 @@ from gym_sokoban.envs   import SokobanEnv
 def depth_first_search(env: SokobanEnv, print_steps: bool=None):
     """
     Traverses the given {@env} in a depth first search way until a termination condition is met.
+
+    Time: O(|V| + |E|)
+    Space: O(|V|)
     """
 
     metrics = {

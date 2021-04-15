@@ -7,7 +7,7 @@ from tests.testing_environment      import unittest
 from src.algorithms                 import depth_first_search    as dfs
 from src.algorithms                 import breadth_first_search  as bfs
 from src.algorithms                 import uniform_cost_search   as ucs
-
+from src.algorithms                 import a_star_search         as astar
 
 RANDOM_SEED = 0
 
@@ -20,7 +20,7 @@ class TestAlgorithms(unittest.TestCase):
     #     self.mock_env = None
 
     def setUp(self):
-        self.mock_env = SokobanEnv(dim_room=(10, 10), num_boxes=2)
+        self.mock_env = SokobanEnv(dim_room=(8, 8), num_boxes=2)
 
         self.mock_env.seed(RANDOM_SEED)
         np.random.seed(RANDOM_SEED)
@@ -127,7 +127,10 @@ class TestAlgorithms(unittest.TestCase):
         o_8x8_ucs = ['U', 'D', 'L', 'L', 'U', 'R', 'U', 'R', 'L', 'D', 'D', 'R', 'R', 'U', 'L', 'R', 'U', 'L', 'D', 'D', 'L', 'L', 'U', 'R', 'R', 'U', 'R', 'U', 'U', 'L', 'D', 'D', 'L', 'D', 'D', 'R', 'R', 'U', 'L', 'R', 'U', 'L', 'D', 'D', 'L', 'L', 'U', 'R', 'D', 'R', 'U', 'R', 'U', 'U', 'L', 'D', 'R', 'D', 'L', 'U', 'U', 'U', 'R', 'L', 'D', 'D', 'L', 'D']
         o_10x10_ucs = ['R', 'R', 'U', 'R', 'D', 'L', 'U', 'U', 'R', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'L', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'R', 'D', 'L', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'R', 'U', 'U', 'R', 'R', 'D', 'L', 'L', 'D', 'L', 'D', 'R', 'D', 'L', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'D', 'L', 'D', 'L', 'L', 'U', 'U', 'R', 'R', 'D', 'R', 'U']
 
-        o = o_10x10_ucs
+        temp = ['r', 'd', 'd', 'l', 'l', 'D', 'r', 'r', 'u', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'L', 'r', 'u', 'u', 'l', 'l', 'd', 'R', 'd', 'r', 'U', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'U', 'l', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'l', 'l', 'u', 'r', 'r', 'U', 'l', 'd', 'r', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'l', 'u', 'r', 'U', 'l', 'd', 'r', 'd', 'l', 'l', 'd', 'r', 'r', 'd', 'L']
+
+
+        o = temp
 
         for a in o:
             self.mock_env.render()
@@ -203,6 +206,15 @@ class TestAlgorithms(unittest.TestCase):
 
         print(f'runtime: {round(end - start, 4)} seconds')
 
+    def test_a_start_search(self):
+        print("test_a_start_search")
+        print(self.mock_env.room_state)
+
+        self.setUp()
+
+        start = time.time()
+        metrics, node_env = astar(self.mock_env, print_steps=True)
+        end = time.time()
 
     def test_temp(self):
         self.setUp()

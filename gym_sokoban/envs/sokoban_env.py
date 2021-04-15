@@ -32,7 +32,7 @@ class SokobanEnv(gym.Env):
             self.num_gen_steps = num_gen_steps
 
         self.num_boxes = num_boxes
-        self.boxes_on_target = 0
+        self.no_boxes_on_target = 0
 
         # Penalties and Rewards
         self.penalty_for_step       = -0.1 # Neg. reward for making a step
@@ -52,6 +52,8 @@ class SokobanEnv(gym.Env):
                                           high=255,
                                           shape=(screen_height, screen_width, 3),
                                           dtype=np.uint8)
+
+
 
         #self.searchTree = SearchTree()
         #self.solution = []
@@ -213,16 +215,16 @@ class SokobanEnv(gym.Env):
 
         # Add the reward if a box is pushed on the target and
         # give a penalty if a box is pushed off the target.
-        if current_boxes_on_target > self.boxes_on_target:
+        if current_boxes_on_target > self.no_boxes_on_target:
             self.reward_last += self.reward_box_on_target
-        elif current_boxes_on_target < self.boxes_on_target:
+        elif current_boxes_on_target < self.no_boxes_on_target:
             self.reward_last += self.penalty_box_off_target
         
         game_won = self._check_if_all_boxes_on_target()        
         if game_won:
             self.reward_last += self.reward_finished
         
-        self.boxes_on_target = current_boxes_on_target
+        self.no_boxes_on_target = current_boxes_on_target
 
     def _check_if_done(self):
         """
@@ -262,7 +264,14 @@ class SokobanEnv(gym.Env):
         self.player_position = np.argwhere(self.room_state == 5)[0]
         self.num_env_steps   = 0
         self.reward_last     = 0
-        self.boxes_on_target = 0
+        self.no_boxes_on_target = 0
+
+        # the positions of the boxes which are not on target states
+        #self.boxes_not_on_target = set(tuple(box)  for box  in np.argwhere(self.room_state == 4)[0])
+        # the positions of the boxes which are on target states
+        #self.boxes_on_target     = set(tuple(box)  for box  in np.argwhere(self.room_state == 3)[0])
+        # the positions of the target states for the boxes
+        #self.goals               = set(tuple(goal) for goal in np.argwhere(self.room_state == 2)[0])
 
         # try:
         # Set initial room_state as the root of the search tree.
@@ -324,9 +333,55 @@ class SokobanEnv(gym.Env):
     def print_room_state_using_format(self):
         print_room_state(convert_room_state_to_output_format(np.copy(self.room_state).astype('str')))
 
+    def manhatten_distance(self, pos1, pos2):
+        """
+        Returns the Manhattan distance between two 2-dimensional points.
+        Generally, in a 2d-grid: What is the minimal number of vertical and horizontal
+        steps to go to come from position {@pos1} to position {@pos2}.
+
+        Arguments:
+            pos1  (2d-list) or (2d-tuple)  - Position in a 2-dimensional plane.
+            pos2  (2d-list) or (2d-tuple) - Position in a 2-dimensional plane.
+        Returns:
+            (float)  - The Manhattan distance between pos1 and pos2.
+        """
+        assert len(pos1) == len(pos2) == 2
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+    def manhattan_heuristic(self):
+        """
+        A heuristic to estimate the goodness of the board.
+        Higher values correspond to a larger 'distances' from the goal state.
+
+        Returns:
+            (float)  - the Manhattan distance of the agent to its nearest box plus the sum of all Manhatten distances
+                       of each box to its nearest goal state.
+        """
+        boxes_not_on_target = set(tuple(box) for box in np.argwhere(self.room_state == 4))
+        box_target_states   = set(tuple(box) for box in np.argwhere(self.room_state == 2))
+
+        if not boxes_not_on_target:
+            return 0
+
+        # the manhattan distance of the player to the nearest box
+        min_dist_player_box = min([self.manhatten_distance(self.player_position, box) for box in boxes_not_on_target])
+
+        # sum of the distances of each box to its nearest goal
+        sum_min_dist_boxes_target = sum( min([self.manhatten_distance(target_state, box) for target_state in box_target_states]) for box in boxes_not_on_target)
+
+        return min_dist_player_box + sum_min_dist_boxes_target
+
+
+
     ##############################################################################
     # Get-methods                                                                #
     ##############################################################################
+
+    def get_boxes(self):
+        pass
+
+    def get_goal_states(self):
+        pass
 
     def get_action_lookup(self):
         return ACTION_LOOKUP
@@ -451,10 +506,6 @@ class SokobanEnv(gym.Env):
                 return {'new_state': new_room_state, 'state_changed': True}     # successful move operation
             else:
                 return {'new_state': self.room_state, 'state_changed': False}   # un-successful move operation
-
-
-    def add_children_to_tree(self):
-        pass
 
     ##############################################################################
     # Search Algorithms                                                          #

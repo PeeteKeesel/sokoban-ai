@@ -1,7 +1,6 @@
 from copy               import deepcopy
 from gym_sokoban.envs   import SokobanEnv
 
-
 def breadth_first_search(env: SokobanEnv, print_steps: bool=None):
     """
     Traverses the given {@env} in a breadth first search way until a termination condition is met.
