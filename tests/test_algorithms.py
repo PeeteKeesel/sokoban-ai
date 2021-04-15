@@ -30,86 +30,6 @@ class TestAlgorithms(unittest.TestCase):
 
         #self.search = Search(self.mock_env, Node(self.mock_env.room_state))
 
-    def test_state_after_action(self):
-        self.setUp()
-        print(self.mock_env.room_state)
-        print(self.mock_env.state_after_action(1))
-
-        self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
-
-        # Pushes
-        # push up -> change
-        self.assertTrue(self.mock_env.state_after_action(1)['state_changed'])
-        expected_state_after_action = np.array([[0, 0, 0, 0, 0, 0],
-                                                [0, 1, 1, 1, 1, 0],
-                                                [0, 0, 2, 4, 1, 0],
-                                                [0, 0, 0, 5, 1, 0],
-                                                [0, 0, 0, 1, 1, 0],
-                                                [0, 0, 0, 0, 0, 0]])
-        self.assertTrue(np.alltrue(expected_state_after_action == self.mock_env.state_after_action(1)['new_state']))
-
-        # push down -> no change
-        self.assertFalse(self.mock_env.state_after_action(2)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(2)['new_state']))
-
-        # push left -> no change
-        self.assertFalse(self.mock_env.state_after_action(3)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(3)['new_state']))
-
-        # push right -> no change
-        self.assertFalse(self.mock_env.state_after_action(4)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(4)['new_state']))
-
-        # Moves
-        # move up -> no change
-        self.assertFalse(self.mock_env.state_after_action(5)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(5)['new_state']))
-
-        # move down -> no change
-        self.assertFalse(self.mock_env.state_after_action(6)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(6)['new_state']))
-
-        # move left -> no change
-        self.assertFalse(self.mock_env.state_after_action(7)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(7)['new_state']))
-
-        # move right -> change
-        self.assertTrue(self.mock_env.state_after_action(8)['state_changed'])
-        expected_state_after_action = np.array([[0, 0, 0, 0, 0, 0],
-                                                [0, 1, 1, 1, 1, 0],
-                                                [0, 0, 2, 1, 1, 0],
-                                                [0, 0, 0, 4, 1, 0],
-                                                [0, 0, 0, 1, 5, 0],
-                                                [0, 0, 0, 0, 0, 0]])
-        self.assertTrue(np.alltrue(expected_state_after_action == self.mock_env.state_after_action(8)['new_state']))
-
-    def test_get_children(self):
-        self.setUp()
-
-        self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
-        print(self.mock_env.room_state)
-
-        # expected successor state after action 'move right'
-        child_expected_after_r = np.array([[0, 0, 0, 0, 0, 0],
-                                          [0, 1, 1, 1, 1, 0],
-                                          [0, 0, 2, 4, 1, 0],
-                                          [0, 0, 0, 5, 1, 0],
-                                          [0, 0, 0, 1, 1, 0],
-                                          [0, 0, 0, 0, 0, 0]])
-        # expected successor state after action 'push up'
-        child_expected_after_U = np.array([[0, 0, 0, 0, 0, 0],
-                                          [0, 1, 1, 1, 1, 0],
-                                          [0, 0, 2, 1, 1, 0],
-                                          [0, 0, 0, 4, 1, 0],
-                                          [0, 0, 0, 1, 5, 0],
-                                          [0, 0, 0, 0, 0, 0]])
-        children_expected = [child_expected_after_r, child_expected_after_U]
-        children_actual   = self.mock_env.get_children()
-
-        children_not_None = [child for child in children_actual if child is not None]
-        self.assertEqual(len(children_not_None), 2, "length of elements not None should be 2")
-        self.assertTrue(np.array_equal(children_expected, children_not_None))
-
     def test_optimal(self):
         self.setUp()
 
@@ -298,12 +218,7 @@ class TestAlgorithms(unittest.TestCase):
     #     self.mock_env.reverse_step(8)
     #     print(self.mock_env.room_state)
 
-INITIAL_ROOM_STATE = np.array([[0, 0, 0, 0, 0, 0],
-                               [0, 1, 1, 1, 1, 0],
-                               [0, 0, 2, 1, 1, 0],
-                               [0, 0, 0, 4, 1, 0],
-                               [0, 0, 0, 5, 1, 0],
-                               [0, 0, 0, 0, 0, 0]])
+
 
 INITIAL_ROOM_STATE_8x8 = np.array([[0, 0, 0, 0, 0, 0, 0, 0],
                                    [0, 0, 0, 0, 1, 1, 0, 0],
