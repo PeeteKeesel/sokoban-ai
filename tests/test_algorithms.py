@@ -2,7 +2,7 @@ import random
 import time
 import numpy as np
 
-from gym_sokoban.envs.sokoban_env   import SokobanEnv, ACTION_LOOKUP, ACTION_LOOKUP_CHARS
+from gym_sokoban.envs.sokoban_env   import SokobanEnv, ACTION_LOOKUP_CHARS
 from tests.testing_environment      import unittest
 from src.algorithms                 import depth_first_search    as dfs
 from src.algorithms                 import breadth_first_search  as bfs
@@ -19,16 +19,18 @@ class TestAlgorithms(unittest.TestCase):
     #     super().__init__(methodName)
     #     self.mock_env = None
 
-    def setUp(self):
-        self.mock_env = SokobanEnv(dim_room=(8, 8), num_boxes=2)
+    def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False, random_seed=RANDOM_SEED):
+        self.mock_env = SokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
 
-        self.mock_env.seed(RANDOM_SEED)
-        np.random.seed(RANDOM_SEED)
-        random.seed(RANDOM_SEED)
-        self.mock_env.action_space.seed(RANDOM_SEED)
+        self.mock_env.seed(random_seed)
+        np.random.seed(random_seed)
+        random.seed(random_seed)
+        self.mock_env.action_space.seed(random_seed)
         self.mock_env.reset()
 
-        #self.search = Search(self.mock_env, Node(self.mock_env.room_state))
+        if print_board:
+            print(f"\n---\nroom of size {dim_room} with {num_boxes} boxes and random_seed={random_seed}")
+            print(self.mock_env.room_state)
 
     def test_optimal(self):
         self.setUp()
@@ -46,11 +48,9 @@ class TestAlgorithms(unittest.TestCase):
         o_8x8 = ['r', 'u', 'u', 'l', 'l', 'D', 'l', 'd', 'R', 'l', 'u', 'r', 'u', 'r', 'r', 'd', 'd', 'L', 'U', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'u', 'R', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'U', 'l', 'l', 'd', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'U', 'd', 'l', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'l', 'l', 'u', 'r', 'r', 'u', 'U', 'l', 'D', 'r', 'd', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'L', 'r', 'u', 'u', 'l', 'l', 'd', 'R', 'd', 'r', 'U', 'U', 'U', 'l', 'u', 'R']
         o_8x8_ucs = ['U', 'D', 'L', 'L', 'U', 'R', 'U', 'R', 'L', 'D', 'D', 'R', 'R', 'U', 'L', 'R', 'U', 'L', 'D', 'D', 'L', 'L', 'U', 'R', 'R', 'U', 'R', 'U', 'U', 'L', 'D', 'D', 'L', 'D', 'D', 'R', 'R', 'U', 'L', 'R', 'U', 'L', 'D', 'D', 'L', 'L', 'U', 'R', 'D', 'R', 'U', 'R', 'U', 'U', 'L', 'D', 'R', 'D', 'L', 'U', 'U', 'U', 'R', 'L', 'D', 'D', 'L', 'D']
         o_10x10_ucs = ['R', 'R', 'U', 'R', 'D', 'L', 'U', 'U', 'R', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'L', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'R', 'D', 'L', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'R', 'U', 'U', 'R', 'R', 'D', 'L', 'L', 'D', 'L', 'D', 'R', 'D', 'L', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'D', 'L', 'D', 'L', 'L', 'U', 'U', 'R', 'R', 'D', 'R', 'U']
+        sol10x10_2 = ['R', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'L', 'R', 'U', 'U', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'R', 'D', 'D', 'L', 'L', 'L', 'U', 'U', 'R', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'D', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'D', 'D', 'L', 'U', 'R', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'U', 'L', 'L', 'D', 'R', 'D', 'D', 'D', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'D', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L']
 
-        temp = ['r', 'd', 'd', 'l', 'l', 'D', 'r', 'r', 'u', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'u', 'l', 'D', 'r', 'd', 'd', 'L', 'r', 'u', 'u', 'l', 'l', 'd', 'R', 'd', 'r', 'U', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'U', 'l', 'l', 'd', 'r', 'r', 'd', 'L', 'r', 'u', 'l', 'l', 'u', 'r', 'r', 'U', 'l', 'd', 'r', 'd', 'l', 'l', 'l', 'd', 'R', 'l', 'u', 'r', 'r', 'r', 'u', 'l', 'u', 'r', 'U', 'l', 'd', 'r', 'd', 'l', 'l', 'd', 'r', 'r', 'd', 'L']
-
-
-        o = temp
+        o = sol10x10_2
 
         for a in o:
             self.mock_env.render()
@@ -94,9 +94,8 @@ class TestAlgorithms(unittest.TestCase):
     #     self.assertTrue(np.array_equal([expected_succ_after_r, expected_succ_after_U], feasible_children))
 
     def test_depth_first_search(self):
-        self.setUp()
-        print(self.mock_env.room_state)
-        print(self.mock_env.print_room_state_using_format())
+        print("test_depth_first_search")
+        self.setUp(dim_room=(5, 5), num_boxes=1, print_board=True)
 
         start = time.time()
         metrics, node_env = dfs(self.mock_env, print_steps=True)
@@ -105,9 +104,9 @@ class TestAlgorithms(unittest.TestCase):
         print(f'runtime: {round(end - start, 4)} seconds')
 
     def test_breadth_first_search(self):
-        self.setUp()
+        print("test_breadth_first_search")
+        self.setUp(print_board=True)
 
-        opt_sol_expected = ['U', 'r', 'u', 'L']
         start = time.time()
         metrics, node_env = bfs(self.mock_env, print_steps=True)
         end = time.time()
@@ -116,9 +115,7 @@ class TestAlgorithms(unittest.TestCase):
 
     def test_uniform_cost_search(self):
         print("test_uniform_cost_search")
-        print(self.mock_env.room_state)
-
-        self.setUp()
+        self.setUp(dim_room=(5, 5), num_boxes=1, print_board=True)
 
         start = time.time()
         _, _ = ucs(self.mock_env, print_steps=True)
@@ -128,13 +125,33 @@ class TestAlgorithms(unittest.TestCase):
 
     def test_a_start_search(self):
         print("test_a_start_search")
-        print(self.mock_env.room_state)
 
-        self.setUp()
+        self.setUp(dim_room=(5, 5), num_boxes=1, print_board=True)
 
         start = time.time()
-        metrics, node_env = astar(self.mock_env, print_steps=True)
+        _, _ = astar(self.mock_env, print_steps=True)
         end = time.time()
+
+        print(f"runtime: {round(end - start, 4)} seconds")
+
+
+    def test_algo_on_multiple_levels(self):
+        print("test_algo_on_multiple_levels")
+        no_of_games_to_solve = 20
+
+        total_time = 0
+        for seed in range(0, no_of_games_to_solve):
+            self.setUp(dim_room=(6, 6), num_boxes=2, print_board=True, random_seed=seed)
+
+            start = time.time()
+            _, _ = astar(self.mock_env, print_steps=True)
+            end = time.time()
+
+            current_time = end - start
+            print(f"runtime: {round(current_time, 4)} seconds")
+            total_time += current_time
+
+        print(f"total runtime for {no_of_games_to_solve} levels: {round(total_time, 4)} seconds.")
 
     def test_temp(self):
         self.setUp()

@@ -30,7 +30,7 @@
         - [ ] tests 
     - [x] Uniform Cost Search (UCS)
         - [ ] tests
-    - [ ] A*
+    - [x] A*
         - [ ] tests 
         - [x] `manhattan_distance` + test 
         - [x] `manhattan_heuristic` + test 

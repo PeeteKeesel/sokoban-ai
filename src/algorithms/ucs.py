@@ -68,7 +68,7 @@ def uniform_cost_search(env: SokobanEnv, print_steps: bool=None):
 class PriorityQueueUcs:
     def __init__(self):
         """
-        A PriorityQueue object consists of a queue and board.
+        A PriorityQueue object consists of a queue and board. It saves the cost/reward for each env.
             queue - This serves as the priority queue. It contains tuples consisting of a Sokoban room state
                     and the corresponding cost for this room state.
                     [(cost_1, state_1), (cost_2, state_2), ... (cost_n, state_n)]

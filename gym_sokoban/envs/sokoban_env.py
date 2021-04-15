@@ -350,7 +350,7 @@ class SokobanEnv(gym.Env):
 
     def manhattan_heuristic(self):
         """
-        A heuristic to estimate the goodness of the board.
+        A heuristic to estimate the cost of the current board.
         Higher values correspond to a larger 'distances' from the goal state.
 
         Returns:
@@ -359,15 +359,18 @@ class SokobanEnv(gym.Env):
         """
         boxes_not_on_target = set(tuple(box) for box in np.argwhere(self.room_state == 4))
         box_target_states   = set(tuple(box) for box in np.argwhere(self.room_state == 2))
+        #print(box_target_states)
+        #print(self.room_state)
 
-        if not boxes_not_on_target:
+        if self._check_if_all_boxes_on_target:  # All boxes are on targets.
             return 0
 
         # the manhattan distance of the player to the nearest box
         min_dist_player_box = min([self.manhatten_distance(self.player_position, box) for box in boxes_not_on_target])
 
         # sum of the distances of each box to its nearest goal
-        sum_min_dist_boxes_target = sum( min([self.manhatten_distance(target_state, box) for target_state in box_target_states]) for box in boxes_not_on_target)
+        sum_min_dist_boxes_target = sum( min([self.manhatten_distance(target_state, box) for target_state in box_target_states])
+                                         for box in boxes_not_on_target )
 
         return min_dist_player_box + sum_min_dist_boxes_target
 
@@ -383,8 +386,13 @@ class SokobanEnv(gym.Env):
     def get_goal_states(self):
         pass
 
-    def get_action_lookup(self):
+    @staticmethod
+    def get_action_lookup():
         return ACTION_LOOKUP
+
+    @staticmethod
+    def get_action_lookup_chars(action):
+        return ACTION_LOOKUP_CHARS[action]
 
     def get_player_position(self):
         return self.player_position
@@ -452,7 +460,7 @@ class SokobanEnv(gym.Env):
 
         children = [None for action in ACTION_LOOKUP.keys()]
 
-        for action in range(1, len(ACTION_LOOKUP)):
+        for action in range(len(ACTION_LOOKUP)):
             state_after_action = self.state_after_action(action)
 
             if state_after_action['state_changed']:
@@ -480,22 +488,22 @@ class SokobanEnv(gym.Env):
             if new_box_pos[0] >= self.room_state.shape[0] or new_box_pos[1] >= self.room_state.shape[1]:
                 return {'new_state': self.room_state, 'state_changed': False}
 
-            can_push_box = self.room_state[tuple(new_player_pos)] in [3, 4]
-            can_push_box &= self.room_state[tuple(new_box_pos)] in [1, 2]
+            can_push_box  = self.room_state[tuple(new_player_pos)] in [3, 4]
+            can_push_box &= self.room_state[tuple(new_box_pos)]    in [1, 2]
 
             if can_push_box:
                 new_room_state = self.room_state.copy()
                 new_room_state[tuple(new_player_pos)] = 5
                 new_room_state[tuple(cur_player_pos)] = 1
 
-                if self.room_state[tuple(new_box_pos)] == 2:                    # box on target state
+                if self.room_state[tuple(new_box_pos)] == 2:                 # box on target state
                     new_room_state[tuple(new_box_pos)] = 3
-                else:                                                           # feasible push
+                else:                                                        # feasible push
                     new_room_state[tuple(new_box_pos)] = 4
 
-                return {'new_state': new_room_state, 'state_changed': True}     # successful push operation
+                return {'new_state': new_room_state, 'state_changed': True}  # successful push operation
 
-            return {'new_state': self.room_state, 'state_changed': False}       # un-successful push operation
+            return {'new_state': self.room_state, 'state_changed': False}    # un-successful push operation
 
         else:
             if self.room_state[tuple(new_player_pos)] not in [0, 4]:
