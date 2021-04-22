@@ -54,7 +54,7 @@ class SokobanEnv(gym.Env):
                                           shape=(screen_height, screen_width, 3),
                                           dtype=np.uint8)
 
-
+        self.children_states = []
 
         #self.searchTree = SearchTree()
         #self.solution = []
@@ -445,6 +445,8 @@ class SokobanEnv(gym.Env):
             if state_after_action['state_changed']:
                 children[action] = state_after_action['new_state']
 
+        self.children_states = children
+
         return children
 
     def state_after_action(self, a):
@@ -493,6 +495,14 @@ class SokobanEnv(gym.Env):
                 return {'new_state': new_room_state, 'state_changed': True}     # successful move operation
             else:
                 return {'new_state': self.room_state, 'state_changed': False}   # un-successful move operation
+
+    def get_feasible_actions(self):
+        """Returns the indices of all feasible actions from the state."""
+        if self.children_states:
+            return [index for index, value in enumerate(self.children_states) if value is not None]
+        else:
+            # TODO: dont call method inside method.
+            return [index for index, value in enumerate(self.get_children()) if value is not None]
 
     ##############################################################################
     # Search Algorithms                                                          #

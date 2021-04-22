@@ -10,8 +10,9 @@ import math
 
 from typing import Tuple, List
 
-c_puct = 1.38   # Constant determining the level of exploration.
-
+c_PUCT = 1.38   # Constant determining the level of exploration.
+D_NOISE_ALPHA = 0.03  # Dirichlet noise alpha parameter to ensure exploration.
+EPS = 0.25  # To handle when to add Dirichlet noise.
 
 class DummyNodeAboveRoot:
 
@@ -45,7 +46,7 @@ class MctsNode:
         self.prev_action = prev_action  # The action which led to this node
         self.is_expanded = False  # If the node is already expanded or not
         self.n_vlosses   = 0  # Number of virtual losses on this node
-        self.child_N = np.zeros([n_actions], dtype=np.float32)  #
+        self.child_N = np.zeros([n_actions], dtype=np.float32)
         self.child_W = np.zeros([n_actions], dtype=np.float32)
         # Save copy of original prior before it gets mutated by dirichlet noise
         self.original_P = np.zeros([n_actions], dtype=np.float32)
@@ -64,7 +65,7 @@ class MctsNode:
         PUCT algorithm from
         (http://gauss.ececs.uc.edu/Workshops/isaim2010/papers/rosin.pdf)
         """
-        return (c_puct * self.child_P * math.sqrt(1 + self.N) /
+        return (c_PUCT * self.child_P * math.sqrt(1 + self.N) /
                 (1 + self.child_N))
 
     @property
@@ -120,11 +121,99 @@ class MctsNode:
         Adds child node for {@action} if it does not exist yet, and returns it.
         """
         if action not in self.children:
-            new_Env = deepcopy(self.Env).move(action)
+            new_Env = deepcopy(self.Env)
+            new_Env.step(action)
             self.children[action] = MctsNode(
                 new_Env, new_Env.get_n_actions(),
                 prev_action=action, parent=self)
         return self.children[action]
+
+    def add_virtual_loss(self, up_to):
+        """Propagate a virtual loss {@up_to} a specific node."""
+        self.n_vlosses += 1
+        self.W -= 1
+        if self.parent is None or self is up_to:
+            return
+        self.parent.add_virtual_loss(up_to)
+
+    def revert_virtual_loss(self, up_to):
+        """Undo the addition of virtual loss."""
+        self.n_vlosses -= 1
+        self.W += 1
+        if self.parent is None or self is up_to:
+            return
+        self.parent.revert_virtual_loss(up_to)
+
+    def revert_visits(self, up_to):
+        self.N -= 1 
+        if self.parent is None or self is up_to: 
+            return 
+        self.parent.revert_visits(up_to)
+
+    def incorporate_nn_estimates(self, action_probs, value, up_to):
+        """
+        Incorporate the estimations of the neural network.
+        This should be called if the node has just been expanded via
+        `select_until_leaf`.
+        """
+        if self.is_expanded:
+            self.revert_visits(up_to=up_to)
+            return
+        self.is_expanded = True
+        self.original_P = self.child_P = action_probs
+        self.child_W = np.ones([self.n_actions], dtype=np.float32) * value
+        self.backup_value(value, up_to=up_to)
+
+    def backup_value(self, value, up_to):
+        """Propagates a value estimation {@up_to} a node."""
+        self.N += 1
+        self.W += value 
+        if self.parent is None or self is up_to: 
+            return 
+        self.parent.backup_value(value, up_to)
+
+    def is_done(self):
+        return self.Env._check_if_done()
+
+    def inject_noise(self):
+        """
+        Additional exploration is achieved by adding Dirichlet
+        noise to the prior probabilities in the root node. This noise
+        ensures that all actions may be trief, but the search may still
+        overrule bad moves. (as in the paper)
+        """
+        dirich = np.random.dirichlet([D_NOISE_ALPHA] * self.n_actions)
+        self.child_P = (1 - EPS) * self.child_P + EPS * dirich
+
+    def child_visits_as_probs(self, squash=False):
+        """
+        Returns the child visit counts as a probability distribution.
+
+        Arguments:
+            squash (bool) - if True, exponentiate the probabilities
+                            by a temperature slightly smaller than 1 to
+                            encourage diversity in early steps.
+        Returns:
+            Numpy array of shape (n_actions).
+        """
+        probs = self.child_N
+        if squash:
+            probs = probs ** .95
+        return probs / np.sum(probs)
+
+    def print_tree(self, depth=0):
+        node = "|--- " + str(depth)
+        print(node)
+        self.Env.render_colored()
+        node =  f"Node: * prev_action={self.prev_action}" + \
+                f"\n      * N={self.N}" + \
+                f"\n      * W={self.W}" + \
+                f"\n      * Q={self.child_Q}" + \
+                f"\n      * P={self.child_P}" + \
+                f"\n      * score={self.child_action_score}"
+        print(node)
+        for _, child in sorted(self.children.items()):
+            child.print_tree(depth+1)
 
 # ================================================================
 class Mcts:
