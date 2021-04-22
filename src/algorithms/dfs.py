@@ -2,7 +2,7 @@ from copy               import deepcopy
 from gym_sokoban.envs   import SokobanEnv
 import numpy as np
 
-def depth_first_search(env: SokobanEnv, print_steps: bool=None):
+def depth_first_search(env: SokobanEnv, metrics: dict()=None, print_steps: bool=None):
     """
     Traverses the given {@env} in a depth first search way until a termination condition is met.
 
@@ -10,12 +10,13 @@ def depth_first_search(env: SokobanEnv, print_steps: bool=None):
     Space: O(|V|)
     """
 
-    metrics = {
-        'no_of_nodes_discovered': 0,    # the total number of discovered nodes. Including repeated ones.
-        'no_of_nodes_repeated': 0,      # the number of a times nodes got discovered repeatedly.
-        'nodes_explored': set(),        # the set of all discovered nodes excluding duplications.
-        'environemnts': set(),          # this saves the environment of the nodes.
-    }
+    if not metrics:
+        metrics = {
+            'no_of_nodes_discovered': 0,    # the total number of discovered nodes. Including repeated ones.
+            'no_of_nodes_repeated': 0,      # the number of a times nodes got discovered repeatedly.
+            'nodes_explored': set(),        # the set of all discovered nodes excluding duplications.
+            'environemnts': set(),          # this saves the environment of the nodes.
+        }
 
     if env._check_if_done():
         return metrics, env
@@ -25,11 +26,10 @@ def depth_first_search(env: SokobanEnv, print_steps: bool=None):
     while True:
         if not env_queue:
             print(metrics)
-            raise Exception('depth_first_search(): Solution NOT FOUND! Empty environment queue.')
+            #raise Exception('depth_first_search(): Solution NOT FOUND! Empty environment queue.')
 
         node_env = env_queue.pop(0)
         metrics['nodes_explored'].add(tuple(node_env.room_state.flatten()))
-        print(f"WHILE: len(env_queue)={len(env_queue)}  \n{node_env.room_state}\n")
 
         if node_env._check_if_all_boxes_on_target():
             print("------------------------------------------------------------------------------------\n" +
@@ -38,10 +38,6 @@ def depth_first_search(env: SokobanEnv, print_steps: bool=None):
                   f"discovered: {metrics['no_of_nodes_discovered']}\n" +
                   f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
                   f"{len(metrics['nodes_explored'])}\n")
-
-            #for i in range(len(env_queue)):
-            #    print(env_queue[i].room_state)
-
             return metrics, node_env
 
         if node_env._check_if_maxsteps():
@@ -49,12 +45,12 @@ def depth_first_search(env: SokobanEnv, print_steps: bool=None):
             continue
 
         children = node_env.get_children()
-        #print(f"   len(children)={len([child for child in children if child is not None])}")
-        #print(len(env_queue))
 
+        # every child is None.
         if not [child for child in children if child is not None]:
             env_queue.pop(0) # todo: Is this correct? Would pop a second time!
 
+        # there is at least one feasible child which is not None.
         else:
             for action, child in reversed(list(enumerate(children))):
                 if print_steps:
@@ -62,18 +58,12 @@ def depth_first_search(env: SokobanEnv, print_steps: bool=None):
                         print(f'no_of_nodes_discovered: {metrics["no_of_nodes_discovered"]}')
                 metrics['no_of_nodes_discovered'] += 1
 
-                print(f"     action={node_env.get_action_lookup_chars(action)}")
-
                 child_env = deepcopy(node_env)  # copy the environment to take a "virtual" step
                 child_env.step(action)          # take a step in the "virtual" environment
 
                 if tuple(child_env.room_state.flatten()) not in metrics['nodes_explored'] and \
                    not env_is_in_envs(child_env, env_queue):
-                   #child_env                             not in env_queue: # TODO: das funktioniert nicht. zb r und R sind gleiche states, werden aber hinyugefuegt
-                    print(f"->>> child_env after action {node_env.get_action_lookup_chars(action)} \n{child_env.room_state}")
                     env_queue.insert(0, child_env)
-                    print(f"{len(env_queue)}")
-                    print(env_queue[0].room_state)
                 else:
                     metrics['no_of_nodes_repeated'] += 1
 

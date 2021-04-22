@@ -26,8 +26,6 @@
         - [ ] tests
     - [x] Breadth First Search (BFS)
         - [ ] tests
-    - [ ] Best First Search 
-        - [ ] tests 
     - [x] Uniform Cost Search (UCS)
         - [ ] tests
     - [x] A*
@@ -59,3 +57,4 @@
 #### Optional Tasks 
 
 - [ ] Deadlock detection (helps making the game tree sparser)
+- [ ] change `dfs`, `bfs` to recursive implementation

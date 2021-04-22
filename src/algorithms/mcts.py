@@ -1,86 +1,130 @@
+"""
+Basic structure is adapted from
+https://github.com/tensorflow/minigo/blob/master/mcts.py
+"""
+from copy import deepcopy
+
 import numpy as np
+import collections
+import math
 
 from typing import Tuple, List
+
+c_puct = 1.38   # Constant determining the level of exploration.
+
+
+class DummyNodeAboveRoot:
+
+    def __init__(self):
+        self.parent = None
+        self.child_N = collections.defaultdict(float)
+        self.child_W = collections.defaultdict(float)
+
+    def revert_virtual_loss(self, up_to=None): pass
+
+    def add_virtual_loss(self, up_to=None): pass
+
+    def revert_visits(self, up_to=None): pass
+
+    def backup_value(self, value, up_to=None): pass
 
 
 # ================================================================
 class MctsNode:
-    """
-    A Node of a Monte-Carlo Search Tree.
-    Multiple connected MctsNodes form a Monte Carlo Tree.
-    Each MctsNode represents an environment state, i.e. a state
-    of the Sokoban grid world.
-    """
 
-    def __init__(self, roomState: Tuple[int], SokobanEnv: object,
-                 parent: object, prevAction: int):
+    def __init__(self, Env, n_actions, prev_action=None, parent=None):
+        self.Env = Env
+        if parent is None:
+            self.depth = 0
+            parent = DummyNodeAboveRoot()
+        else:
+            self.depth = parent.depth + 1
+        self.parent      = parent
+        self.room_state  = self.Env.get_room_state()
+        self.n_actions   = n_actions  # Number of actions from the node
+        self.prev_action = prev_action  # The action which led to this node
+        self.is_expanded = False  # If the node is already expanded or not
+        self.n_vlosses   = 0  # Number of virtual losses on this node
+        self.child_N = np.zeros([n_actions], dtype=np.float32)  #
+        self.child_W = np.zeros([n_actions], dtype=np.float32)
+        # Save copy of original prior before it gets mutated by dirichlet noise
+        self.original_P = np.zeros([n_actions], dtype=np.float32)
+        self.child_P    = np.zeros([n_actions], dtype=np.float32)
+        self.children = {}
+
+    @property
+    def child_Q(self):
+        """Returns the mean value of the state."""
+        return self.child_W / (1 + self.child_N)
+
+    @property
+    def child_U(self):
         """
-        Initializes a Monte-Carlo tree search node which contains the current
-        state of the board, the action which was taken to get to the current
-        state, the node from which this action was taken and the children
-        of the current state (the states after all feasible actions).
-
-        Arguments:
-            roomState  (Tuple[int]): state of the board.
-            SokobanEnv (object):     defines the environment dynamics.
-            parent     (object):     the parent MctsNode.
-            prevAction (int):        the action which led to the current node.
+        Returns U score of the state. The score is a variant of the
+        PUCT algorithm from
+        (http://gauss.ececs.uc.edu/Workshops/isaim2010/papers/rosin.pdf)
         """
+        return (c_puct * self.child_P * math.sqrt(1 + self.N) /
+                (1 + self.child_N))
 
-        self.roomState = roomState
-        self.children = []
-        self.parent = parent
-        self.prevAction = prevAction
-
-        self.SokobanEnv = SokobanEnv
-
-    # ----------------------------------------------------------------
-    # Get methods.
-
-    def get_children(self):
+    @property
+    def child_action_score(self):
         """
-        Return a list of all children data of the current MctsNode.
-
-        Returns:
-            (list): list of the roomStates of the child MctsNodes.
+        Returns the score of the state which will be used to select nodes
+        in the selection step. The action for which this score is maximal
+        will be chosen, thus, higher values are prefered in the search.
+        As the upper confidence bound Q(s, a) + U(s, a) in the paper.
         """
-        return [child.data for child in self.children]
+        return self.child_Q + self.child_U
 
-    def get_children_nodes(self):
+    @property
+    def N(self):
+        """Returns the action which led to this state had been taken."""
+        return self.parent.child_N[self.prev_action]
+
+    @property
+    def W(self):
+        """Returns the total action value for the state."""
+        return self.parent.child_W[self.prev_action]
+
+    @property
+    def Q(self):
+        """Returns the state action value Q."""
+        return self.W / (1 + self.N)
+
+    @N.setter
+    def N(self, value):
+        """Sets the number of times N the node has been visited."""
+        self.parent.child_N[self.prev_action] = value
+
+    @W.setter
+    def W(self, value):
+        """Sets the total action value W of the node."""
+        self.parent.child_W[self.prev_action] = value
+
+    def select_until_leaf(self):
+        current = self
+        while True:
+            current.N += 1
+            # Leaf node is encountered. Because it has no children yet.
+            if not current.is_expanded:
+                break
+            # Choose action with the highest upper confidence bound.
+            max_action = np.argmax(current.child_action_score)
+            # Add new child MctsNode if action was not taken before.
+            current    = current.maybe_add_child(max_action)
+        return current
+
+    def maybe_add_child(self, action):
         """
-        Return a list of all Children Nodes of the current Node.
-
-        Returns:
-            (list): list of the Child Nodes.
+        Adds child node for {@action} if it does not exist yet, and returns it.
         """
-        return [child for child in self.children]
-
-    # ----------------------------------------------------------------
-    # Additional methods.
-
-    def print_children(self):
-        """ Prints all the Children for the MctsNode. """
-        print(f"{self.roomState}: {self.get_children()}")
-
-    def add_child(self, node: object):
-        """
-        Adds a child MctsNode to the current MctsNode.
-
-        Arguments:
-            node (object): child MctsNodes.
-        """
-        self.children.append(node)
-
-    def add_children(self, nodes: List[object]):
-        """
-        Adds multiple children MctsNodes to the current MctsNode.
-
-        Arguments:
-            nodes (list): list of child nodes.
-        """
-        for node in nodes:
-            self.children.append(node)
-
+        if action not in self.children:
+            new_Env = deepcopy(self.Env).move(action)
+            self.children[action] = MctsNode(
+                new_Env, new_Env.get_n_actions(),
+                prev_action=action, parent=self)
+        return self.children[action]
 
 # ================================================================
 class Mcts:

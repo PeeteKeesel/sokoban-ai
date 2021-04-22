@@ -3,6 +3,8 @@ from typing import Set, List
 from gym.utils           import seeding
 from gym.spaces.discrete import Discrete
 from gym.spaces          import Box
+from termcolor import colored, cprint
+
 from .room_utils         import generate_room
 from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
 
@@ -10,7 +12,6 @@ from copy import deepcopy
 
 import gym
 import numpy as np
-
 
 class SokobanEnv(gym.Env):
     metadata = {
@@ -286,6 +287,21 @@ class SokobanEnv(gym.Env):
     #def get_root(self):
     #    return self.searchTree.get_root()
 
+
+    def render_colored(self):
+        for x in range(self.room_state.shape[0]):
+            for y in range(self.room_state.shape[1]):
+                end = "" if y < self.room_state.shape[0] - 1 else " "
+                bg_color = BG_COLORS[self.room_state[x][y]]
+                color = "white" if bg_color == "black" else "black"
+                if self.room_state[x][y] == 5:
+                    colored_print(" P ", "red", bg_color, end)
+                elif self.room_state[x][y] == 0:
+                    colored_print(f"   ", color, bg_color, end)
+                else:
+                    colored_print(f" {self.room_state[x][y]} ", color, bg_color, end)
+        return
+
     def render(self, mode='human', close=None, scale=1):
         assert mode in RENDERING_MODES
 
@@ -293,6 +309,20 @@ class SokobanEnv(gym.Env):
 
         if mode == 'format':
             return self.print_room_state_using_format()
+
+        elif mode == "colored":
+            for x in range(self.room_state.shape[0]):
+                for y in range(self.room_state.shape[1]):
+                    end = "" if y < self.room_state.shape[0] - 1 else " "
+                    bg_color = BG_COLORS[self.room_state[x][y]]
+                    color = "white" if bg_color == "black" else "black"
+                    if self.room_state[x][y] == 5:
+                        colored_print(" P ", "red", bg_color, end)
+                    elif self.room_state[x][y] == 0:
+                        colored_print(f"   ", color, bg_color, end)
+                    else:
+                        colored_print(f" {self.room_state[x][y]} ", color, bg_color, end)
+            return
 
         if 'rgb_array' in mode:
             return img
@@ -359,8 +389,6 @@ class SokobanEnv(gym.Env):
         """
         boxes_not_on_target = set(tuple(box) for box in np.argwhere(self.room_state == 4))
         box_target_states   = set(tuple(box) for box in np.argwhere(self.room_state == 2))
-        #print(box_target_states)
-        #print(self.room_state)
 
         if self._check_if_all_boxes_on_target:  # All boxes are on targets.
             return 0
@@ -380,11 +408,16 @@ class SokobanEnv(gym.Env):
     # Get-methods                                                                #
     ##############################################################################
 
-    def get_boxes(self):
-        pass
+    def get_room_state(self):
+        return self.room_state
 
-    def get_goal_states(self):
-        pass
+    @staticmethod
+    def get_n_actions():
+        return len(list(ACTION_LOOKUP.keys()))
+
+    @staticmethod
+    def get_action_indices():
+        return list(ACTION_LOOKUP.keys())
 
     @staticmethod
     def get_action_lookup():
@@ -396,60 +429,6 @@ class SokobanEnv(gym.Env):
 
     def get_player_position(self):
         return self.player_position
-
-    # # Find all feasible successor states
-    # def set_children(self):
-    #     print("SokobanEnv.set_children()")
-    #     succs = [None for a in ACTION_LOOKUP.keys()]
-    #     #node = self.searchTree.get_root()
-    #
-    #     for act in range(1, len(ACTION_LOOKUP)):
-    #         state_after_act = self.state_after_action(act)
-    #         if state_after_act['state_changed']:
-    #             succs[act] = state_after_act['new_state']
-    #             self.searchTree.get_root().set_child(room_state=succs[act], reward=0, finished=False, action=act)
-    #
-    #     return succs
-    #
-    # # Get the room_state after a given action
-    # def state_after_action(self, a):
-    #     assert a in ACTION_LOOKUP
-    #
-    #     change = CHANGE_COORDINATES[(a-1) % 4]
-    #     cur_pl_pos = self.player_position
-    #     new_pl_pos = cur_pl_pos + change
-    #
-    #     if a == 0:  # no operation
-    #         return {'new_state': self.room_state, 'state_changed': False}       # no operation
-    #     if a < 5:   # push operation
-    #         new_box_pos = new_pl_pos + change
-    #         if new_box_pos[0] >= self.room_state.shape[0] or new_box_pos[1] >= self.room_state.shape[1]:
-    #             return {'new_state': self.room_state, 'state_changed': False}   # un-successful push operation
-    #
-    #         can_push_box  = self.room_state[tuple(new_pl_pos)]  in [3, 4]
-    #         can_push_box &= self.room_state[tuple(new_box_pos)] in [1, 2]
-    #         if can_push_box:
-    #             new_box_pos, old_box_pos = tuple(new_box_pos), tuple(new_pl_pos)
-    #             new_room_state = self.room_state.copy()
-    #             new_room_state[tuple(new_pl_pos)] = 5
-    #             new_room_state[tuple(cur_pl_pos)] = 1
-    #
-    #             if self.room_state[new_box_pos] == 2:
-    #                 new_room_state[new_box_pos] = 3     # box on target state
-    #             else:
-    #                 new_room_state[new_box_pos] = 4     # feasible push
-    #
-    #             return {'new_state': new_room_state, 'state_changed': True}     # successful push operation
-    #         return {'new_state': self.room_state, 'state_changed': False}       # un-successful push operation
-    #     else:       # move operation
-    #         if self.room_state[tuple(new_pl_pos)] not in [0, 4]:
-    #             new_room_state = self.room_state.copy()
-    #             new_room_state[tuple(new_pl_pos)] = 5
-    #             new_room_state[tuple(cur_pl_pos)] = 1
-    #
-    #             return {'new_state': new_room_state, 'state_changed': True}     # successful move operation
-    #         else:
-    #             return {'new_state': self.room_state, 'state_changed': False}   # un-successful move operation
 
     def get_children(self):
         """
@@ -982,6 +961,35 @@ def print_room_state(mat):
         print()
     print()
 
+BACKGROUND_COLORS = {"black": "0;{};40",
+                     "red": "0;{};41",
+                     "green": "0;{};42",
+                     "orange": "0;{};43",
+                     "blue": "0;{};44",
+                     "purple": "0;{};45",
+                     "dark green": "0;{};46",
+                     "white": "0;{};47"}
+
+COLORS = {"black": "30",
+          "red": "31",
+          "green": "32",
+          "orange": "33",
+          "blue": "34",
+          "purple": "35",
+          "olive green": "36",
+          "white": "37"}
+
+
+def colored_print(text, color, background_color, end=""):
+    """
+    Prints text with color.
+    """
+    color_string = BACKGROUND_COLORS[background_color].format(COLORS[color])
+    text = f"\x1b[{color_string}m{text}\x1b[0m{end}"
+    if end == "":
+        print(text, end=end)
+    else:
+        print(text)
 
 ##############################################################################
 # Global variables                                                           #
@@ -994,6 +1002,15 @@ LEVEL_FORMAT = {
     3: '*',  # box on target
     4: 'B',  # box not on target
     5: '@',  # agent
+}
+
+BG_COLORS = {
+    0: "black",   # wall
+    1: "white",   # empty space
+    2: "red",     # box target
+    3: "blue",    # box on target
+    4: "orange",    # box not on target
+    5: "green",   # agent
 }
 
 ACTION_LOOKUP = {
@@ -1032,4 +1049,4 @@ CHANGE_COORDINATES = {
     3: (0, 1)
 }
 
-RENDERING_MODES = ['rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw', 'format']
+RENDERING_MODES = ['colored', 'rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw', 'format']
