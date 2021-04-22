@@ -205,7 +205,7 @@ class MctsNode:
         node = "|--- " + str(depth)
         print(node)
         self.Env.render_colored()
-        node =  f"Node: * prev_action={self.prev_action}" + \
+        node =  f"Node: * prev_action={self.prev_action} = {self.Env.get_action_lookup_chars(self.prev_action)}" + \
                 f"\n      * N={self.N}" + \
                 f"\n      * W={self.W}" + \
                 f"\n      * Q={self.child_Q}" + \

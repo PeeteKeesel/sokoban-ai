@@ -108,7 +108,50 @@ class TestMctsNode(unittest.TestCase):
         print("test_select_until_leaf()")
         self.setUp(render_board=True)
 
-        pass
+        root = MctsNode(self.mock_env, self.mock_env.get_n_actions())
+        child_after_1 = root.maybe_add_child(1)
+        after_2 = root.maybe_add_child(2)
+        after_6 = root.maybe_add_child(6)
+        after_7 = root.maybe_add_child(7)
+        child_after_8 = root.maybe_add_child(8)
+
+        root.child_P = np.array(
+            [0.00, 0.13, 0.01, 0.01, 0.02, 0.00, 0.00, 0.00, 0.02],
+            dtype=np.float32)
+
+        # Mock as if all nodes were expanded.
+        root.is_expanded = True
+
+        # Go the trajectory [U, r, u, L] and [U, U]
+        child_after_11 =  child_after_1.maybe_add_child(1)
+        child_after_1.is_expanded = True
+        child_after_1.child_P = np.array(
+            [0.00, 0.2, 0.01, 0.01, 0.02, 0.00, 0.00, 0.02, 0.32],
+            dtype=np.float32)
+        child_after_18 = child_after_1.maybe_add_child(8)
+
+        child_after_185 = child_after_18.maybe_add_child(5)
+        child_after_18.is_expanded = True
+        child_after_18.child_P = np.array(
+            [0.00, 0.02, 0.01, 0.01, 0.02, 0.61, 0.00, 0.00, 0.02],
+            dtype=np.float32)
+
+        # Should be a terminal state.
+        child_after_1813 = child_after_185.maybe_add_child(3)
+        child_after_185.is_expanded = True
+        child_after_185.child_P = np.array(
+            [0.00, 0.02, 0.01, 0.61, 0.02, 0.61, 0.00, 0.00, 0.02],
+            dtype=np.float32)
+
+        # Go the trajectory [r, u] and [r, D]
+        child_after_82 = child_after_8.maybe_add_child(2)
+        child_after_8.is_expanded = True
+        child_after_85 = child_after_8.maybe_add_child(5)
+
+        leaf = root.select_until_leaf()
+        leaf.Env.render_colored()
+
+        # root.print_tree()
 
     def test_print_tree(self):
         print("test_print_tree()")
@@ -122,6 +165,8 @@ class TestMctsNode(unittest.TestCase):
         root.maybe_add_child(5)  # Non feasible action
         root.maybe_add_child(6)  # Non feasible action
         root.maybe_add_child(7)  # Non feasible action
-        root.maybe_add_child(8)  # Feasible action
+        child_after_8 = root.maybe_add_child(8)  # Feasible action
+
+        child_after_8.maybe_add_child(5)
 
         root.print_tree()

@@ -425,7 +425,9 @@ class SokobanEnv(gym.Env):
 
     @staticmethod
     def get_action_lookup_chars(action):
-        return ACTION_LOOKUP_CHARS[action]
+        if action in ACTION_LOOKUP_CHARS.keys():
+            return ACTION_LOOKUP_CHARS[action]
+        return None
 
     def get_player_position(self):
         return self.player_position
