@@ -1,10 +1,6 @@
-from typing import Set, List
-
 from gym.utils           import seeding
 from gym.spaces.discrete import Discrete
 from gym.spaces          import Box
-from termcolor import colored, cprint
-
 from .room_utils         import generate_room
 from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
 
@@ -284,10 +280,6 @@ class SokobanEnv(gym.Env):
         starting_observation = self.render(render_mode)
         return starting_observation
 
-    #def get_root(self):
-    #    return self.searchTree.get_root()
-
-
     def render_colored(self):
         for x in range(self.room_state.shape[0]):
             for y in range(self.room_state.shape[1]):
@@ -424,6 +416,10 @@ class SokobanEnv(gym.Env):
         return ACTION_LOOKUP
 
     @staticmethod
+    def get_chars_lookup(action):
+        return CHARS_LOOKUP_ACTIONS[action]
+
+    @staticmethod
     def get_action_lookup_chars(action):
         if action in ACTION_LOOKUP_CHARS.keys():
             return ACTION_LOOKUP_CHARS[action]
@@ -555,412 +551,6 @@ class SokobanEnv(gym.Env):
         return
 
 
-
-
-
-
-
-# class Search(gym.Env):
-#     def __init__(self, env, tree):
-#         self.env = env
-#         self.tree = tree
-#
-#     # Build a tree using DFS. Start from a node (=board-state) and choose actions
-#     # until either (1) max number of steps achieved or (2) final state is reached.
-#     def depth_first_search(self, discovered, step, found: bool = False):
-#         if self.tree.data not in discovered:
-#             discovered.add(self.tree.data)
-#
-#             # found the solution
-#             if self.env._check_if_done():
-#                 found = True
-#                 print(f"Solution found at step {step}")
-#                 return found
-#             # continue the search
-#             else:
-#                 self.add_children_nodes()
-#
-#         return
-#
-#     def add_children_nodes(self):
-#         # get all actions possible from the current state
-#         print(self.env.room_state)
-#         print(self.env.player_position)
-#         print(self.env.action_space)
-#
-#         # 1. Get all possible actions
-#         # 2. take action & if its not "no operation", add it to the tree
-#         for action in range(1, len(ACTION_LOOKUP.keys())):
-#             print(self.env.room_state)
-#
-#             # take a step
-#             observation, reward, done, info = self.env.step(action)
-#             print(info)
-#             # take the action
-#             print(action)
-#             # reverse the action
-#
-#             # reverse the step
-
-##############################################################################
-# Additional classes                                                         #
-##############################################################################
-
-# this tree serves to save all room_states in a tree
-
-##############################################################################
-# SearchTree                                                                 #
-##############################################################################
-# class SearchTree:
-#     def __init__(self):
-#         print("__init__ SearchTree called")
-#         self.root = None
-#
-#     def set_root(self, state):
-#         #if np.nan(self.root):
-#         self.root = SearchTreeNode(state)
-#         # else:
-#         #     raise ValueError(f"Root is already set\n  it is:{self.root}")
-#
-#     def get_root(self):
-#         return self.root
-#
-# ##############################################################################
-# # SearchTreeNode                                                             #
-# ##############################################################################
-# class SearchTreeNode:
-#     def __init__(self, room_state, reward=0, finished=False, action=None, parent=None, tree=None, env=SokobanEnv):
-#         print("__init__ SearchTreeNode called")
-#         self.room_state = room_state  # the state of the room
-#
-#         self.reward     = reward  # the reward for taking the action which led to this node
-#         self.finished   = finished  # if this node is a terminal node
-#         self.action     = action  # the action which led to this node
-#
-#         self.tree       = tree  # the tree in which the node is
-#         self.parent     = parent  # the parent node
-#         self.children   = [None for a in ACTION_LOOKUP.keys()]  # all child nodes
-#         self.value      = None  # the current cumulated value
-#         self.visits     = 0  # number of times this node was visited
-#
-#         self.prev_action_traj = []  # the trajectory of actions which led to this node
-#
-#         self.env = env  # in which environment does the node lie
-#
-#     # ----------------------------------------------------------------------------
-#     # get methods
-#     def get_room_state(self):
-#         return self.room_state
-#
-#     def get_children(self):
-#         return self.children
-#
-#     def get_child(self, index):
-#         return self.children[index]
-#
-#     def get_all_feasible_children(self):
-#         return [child for child in self.children if child is not None]
-#
-#     # ----------------------------------------------------------------------------
-#     # set methods
-#     def set_child(self, room_state, reward, finished, action):
-#         assert action in ACTION_LOOKUP
-#         print(f"SearchTreeNode.set_child  action={action}")
-#
-#         env = deepcopy(self.env)
-#         env.step(action=action)
-#
-#         node = SearchTreeNode(room_state=room_state, reward=reward, finished=finished,
-#                               action=action, parent=self, tree=self.tree, env=env)
-#         self.children[action] = node
-#
-#         return node
-#
-# ##############################################################################
-# # Searches                                                                   #
-# ##############################################################################
-# class Searches:
-#     def __init__(self, env: SokobanEnv, max_steps: int = 150, n_simulations: int = 10):
-#         print("__init__ Searches called")
-#         self.env = env  # the Sokoban environment
-#         self.n_simulations = n_simulations
-#         self.max_steps = max_steps
-#         self.tree = SearchTree()  # the tree which consists of the room_states as nodes
-#         self.tree.set_root(env.room_state)  # set current room state as the node of the search tree
-#
-#         self.current_tree = SearchTree()  # the current tree the search is in
-#         self.current_tree.set_root(env.room_state)
-#         self.current_node = self.current_tree.get_root()
-#         self.current_node.env = env
-#
-#         self.solution = []  # solution trajectory
-#
-#         self.prev_env = None  # this is need to be in the correct env when using recursion
-#         self.current_env = deepcopy(self.current_node.env)  # this is needed to not change the state of the 'real' environment
-#
-#     def get_children_of_current_trees_root(self):
-#         return self.current_tree.get_root().get_children()
-#
-#     def get_children_of_current_node(self):
-#         print("Searches.get_children_of_current_node()")
-#         return self.current_node.get_children()
-#
-#     # Find all feasible successor states
-#     def set_children(self):
-#         print("Searches.set_children()")
-#         succs = [None for a in ACTION_LOOKUP.keys()]
-#         # node = self.searchTree.get_root()
-#
-#         for act in range(1, len(ACTION_LOOKUP)):
-#             state_after_act = self.state_after_action(act)
-#             if state_after_act['state_changed']:
-#                 succs[act] = state_after_act['new_state']
-#
-#                 self.current_node.set_child(room_state=succs[act], reward=0, finished=False, action=act)
-#                 # self.tree.get_root().set_child(room_state=succs[act], reward=0, finished=False, action=act)
-#
-#         return succs
-#
-#     # Get the room_state after a given action
-#     def state_after_action(self, a):
-#         assert a in ACTION_LOOKUP
-#         assert np.alltrue(self.current_node.room_state == self.current_node.env.room_state)
-#
-#         change = CHANGE_COORDINATES[(a - 1) % 4]
-#         cur_pl_pos = self.current_node.env.player_position #if self.current_env is not None else self.env.player_position
-#         new_pl_pos = cur_pl_pos + change
-#
-#         if a == 0:  # no operation
-#             return {'new_state': self.current_node.room_state, 'state_changed': False}  # no operation
-#         if a < 5:  # push operation
-#             new_box_pos = new_pl_pos + change
-#             if new_box_pos[0] >= self.current_node.room_state.shape[0] or new_box_pos[1] >= self.current_node.room_state.shape[1]:
-#                 return {'new_state': self.current_node.room_state, 'state_changed': False}  # un-successful push operation
-#
-#             can_push_box = self.current_node.room_state[tuple(new_pl_pos)] in [3, 4]
-#             can_push_box &= self.current_node.room_state[tuple(new_box_pos)] in [1, 2]
-#             if can_push_box:
-#                 new_box_pos, old_box_pos = tuple(new_box_pos), tuple(new_pl_pos)
-#                 new_room_state = self.current_node.room_state.copy()
-#                 new_room_state[tuple(new_pl_pos)] = 5
-#                 if self.current_node.parent is not None:
-#                     new_room_state[tuple(cur_pl_pos)] = 1 if self.current_node.parent.room_state[tuple(cur_pl_pos)] != 2 else 2
-#                 else:
-#                     new_room_state[tuple(cur_pl_pos)] = 1
-#
-#                 if self.current_node.room_state[new_box_pos] == 2:
-#                     new_room_state[new_box_pos] = 3  # box on target state
-#                 else:
-#                     new_room_state[new_box_pos] = 4  # feasible push
-#
-#                 return {'new_state': new_room_state, 'state_changed': True}  # successful push operation
-#             return {'new_state': self.current_node.room_state, 'state_changed': False}  # un-successful push operation
-#         else:  # move operation
-#             if self.current_node.room_state[tuple(new_pl_pos)] not in [0, 4]:
-#                 new_room_state = self.current_node.room_state.copy()
-#                 new_room_state[tuple(new_pl_pos)] = 5
-#                 if self.current_node.parent is not None:
-#                     new_room_state[tuple(cur_pl_pos)] = 1 if self.current_node.parent.room_state[tuple(cur_pl_pos)] != 2 else 2
-#                 else:
-#                     new_room_state[tuple(cur_pl_pos)] = 1
-#
-#                 return {'new_state': new_room_state, 'state_changed': True}  # successful move operation
-#             else:
-#                 return {'new_state': self.current_node.room_state, 'state_changed': False}  # un-successful move operation
-#
-#     # # Get the room_state after a given action
-#     # def state_after_action(self, a):
-#     #     assert a in ACTION_LOOKUP
-#     #
-#     #     change = CHANGE_COORDINATES[(a - 1) % 4]
-#     #     cur_pl_pos = self.env.player_position
-#     #     new_pl_pos = cur_pl_pos + change
-#     #
-#     #     if a == 0:  # no operation
-#     #         return {'new_state': self.tree.get_root().room_state, 'state_changed': False}  # no operation
-#     #     if a < 5:  # push operation
-#     #         new_box_pos = new_pl_pos + change
-#     #         if new_box_pos[0] >= self.tree.get_root().room_state.shape[0] or new_box_pos[1] >= self.tree.get_root().room_state.shape[1]:
-#     #             return {'new_state': self.tree.get_root().room_state, 'state_changed': False}  # un-successful push operation
-#     #
-#     #         can_push_box = self.tree.get_root().room_state[tuple(new_pl_pos)] in [3, 4]
-#     #         can_push_box &= self.tree.get_root().room_state[tuple(new_box_pos)] in [1, 2]
-#     #         if can_push_box:
-#     #             new_box_pos, old_box_pos = tuple(new_box_pos), tuple(new_pl_pos)
-#     #             new_room_state = self.tree.get_root().room_state.copy()
-#     #             new_room_state[tuple(new_pl_pos)] = 5
-#     #             new_room_state[tuple(cur_pl_pos)] = 1
-#     #
-#     #             if self.tree.get_root().room_state[new_box_pos] == 2:
-#     #                 new_room_state[new_box_pos] = 3  # box on target state
-#     #             else:
-#     #                 new_room_state[new_box_pos] = 4  # feasible push
-#     #
-#     #             return {'new_state': new_room_state, 'state_changed': True}  # successful push operation
-#     #         return {'new_state': self.tree.get_root().room_state, 'state_changed': False}  # un-successful push operation
-#     #     else:  # move operation
-#     #         if self.tree.get_root().room_state[tuple(new_pl_pos)] not in [0, 4]:
-#     #             new_room_state = self.tree.get_root().room_state.copy()
-#     #             new_room_state[tuple(new_pl_pos)] = 5
-#     #             new_room_state[tuple(cur_pl_pos)] = 1
-#     #
-#     #             return {'new_state': new_room_state, 'state_changed': True}  # successful move operation
-#     #         else:
-#     #             return {'new_state': self.tree.get_root().room_state, 'state_changed': False}  # un-successful move operation
-#
-#     # ----------------------------------------------------------------------------
-#     # search methods
-#     def DFS_search(self, discovered: Set, terminated: bool = False, steps:int=0):
-#         if discovered is None:
-#             discovered = set()
-#
-#         #if self.current_env is None:
-#         #    self.current_env = deepcopy(self.current_node.env) # copy the environment to simulate and therefore not change the actual env
-#
-#         env = deepcopy(self.current_node.env)
-#
-#         steps += 1
-#         print(f"-----------------------\n>>>>STEPS={steps}\n")
-#
-#         print("Searches.DFS_search")
-#         if self.current_node.parent is not None:
-#             print(f"parent.room_state    :\n{self.current_node.parent.room_state}")
-#         #print(f"current_env.room_state :\n{self.current_env.room_state}")
-#         print(f"current_node.room_state:\n{self.current_node.room_state}")
-#
-#         # if node is None:
-#         #     node = self.tree.get_root()
-#
-#         # ! the current environments room_state should always be equal to the current_node's room_state
-#         # ! Always also change the current_env's state
-#         #if np.alltrue(self.current_node.room_state != self.current_env.room_state):
-#         #    self.current_env = deepcopy(self.prev_env)
-#
-#         # # Check if the current nodes's room_state was already discovered before.
-#         # print("------- if not np.alltrue(np.in1d(self.current_node.room_state, discovered)) -------")
-#         # a = tuple(self.current_node.room_state.flatten())
-#         # b = discovered
-#         # print(a)
-#         # print(b)
-#         # print(a in b)
-#         # print(np.in1d(a, b))
-#         # print(np.alltrue(np.in1d(a, b))) # Falsch, funktioniert nicht
-#
-#         print("-------------------------------------------------------------------------------------")
-#         if not tuple(self.current_node.room_state.flatten()) in discovered:
-#             print("self.current_node.room_state is NOT IN discovered")
-#
-#             # If not, add it to the list of discovered room_states
-#             discovered.add(tuple(self.current_node.room_state.flatten()))
-#             print(f"discovered = {discovered}")
-#
-#             # The current node is the terminal node.
-#             if self.current_node.env._check_if_done():
-#                 terminated = True
-#                 self.solution = self.current_node.prev_action_traj
-#                 print(f"SOLUTION FOUND :)  solution: {self.solution}")
-#                 return terminated
-#
-#             # TODO: This needs to count in a logical way.
-#             elif self.current_node.env.num_env_steps >= self.current_node.env.max_steps:
-#                 print(f"MAXIMAL NUMBER OF STEPS = {self.current_node.env.num_env_steps} reached")
-#
-#             # Todo: ? Include maximal steps in depth of the tree ?
-#
-#             # Continue the search.
-#             else:
-#                 # set and get all children SearchTreeNode's to the current SearchTreeNode
-#                 self.set_children()
-#                 stack = self.current_node.get_children()
-#
-#                 print(f"len(children): {len(stack)}  len(feasible_children): {len(self.current_node.get_all_feasible_children())}  "
-#                       f"\n{self.current_node.room_state}"
-#                       f"\n{self.current_node.env.room_state}")
-#                 for child in self.current_node.get_all_feasible_children():
-#                     print(ACTION_LOOKUP_CHARS[child.action])
-#                     print(child.room_state)
-#                 print("###########################################################################################")
-#
-#                 # Search as long as there are successors and none of them is the goal.
-#                 while stack \
-#                     and not self.current_node.env._check_if_done() \
-#                         and not self.current_node.env.num_env_steps >= self.current_node.env.max_steps:
-#
-#                     nxtNode = stack.pop()
-#                     if nxtNode is not None:
-#                         print(f"nxtNode.room_state: {nxtNode.room_state}")
-#
-#                     if (nxtNode is not None) and (not tuple(nxtNode.room_state.flatten()) in discovered):
-#                         print(f"    CURRENT NODE inside: "
-#                               f"\n{self.current_node.room_state}  "
-#                               f"\n{nxtNode.room_state}  {ACTION_LOOKUP_CHARS[len(stack)]}")
-#
-#                         print(f" get_all_feasible_children: {len(self.current_node.get_all_feasible_children())}")
-#                         self.current_node = nxtNode # steps += 1
-#                         assert nxtNode.action == self.current_node.action
-#
-#                         # the previous environment is the current one since we are taking a step here
-#                         self.prev_env = deepcopy(self.current_node.env)
-#
-#                         # append to the action trajectory to remember which actions were taking to get to current_node
-#                         if not self.current_node.parent.prev_action_traj:
-#                             self.current_node.prev_action_traj.append(ACTION_LOOKUP_CHARS[self.current_node.action])
-#                         else:
-#                             self.current_node.prev_action_traj = self.current_node.parent.prev_action_traj.copy()
-#                             self.current_node.prev_action_traj.append(ACTION_LOOKUP_CHARS[self.current_node.action])
-#                         print(f"  prev_action_traj: {self.current_node.prev_action_traj}")
-#
-#                         print(f"   BEFORE action: {ACTION_LOOKUP_CHARS[self.current_node.action]}\n"
-#                               f"{self.prev_env.room_state}\n"
-#                               f"{env.room_state}\n"
-#                               f"{self.current_node.room_state}")
-#
-#                         # simulate the step in the temporary environment
-#                         env.step(self.current_node.action)
-#                         print(f"   AFTER action: {ACTION_LOOKUP_CHARS[self.current_node.action]}\n"
-#                               f"{self.prev_env.room_state}\n"
-#                               f"{env.room_state}\n"
-#                               f"{self.current_node.room_state}")
-#
-#                         # set the environment of the current_node, which is the nxtNode, to the environment
-#                         #   after taking that action.
-#                         self.current_node.env = deepcopy(env)
-#
-#                         print(f"    nxtNode after action '{ACTION_LOOKUP_CHARS[self.current_node.action]}' "
-#                               f"\n{self.current_node.room_state}"
-#                               f"\nwith the parent "
-#                               f"\n{self.current_node.parent.room_state}")
-#                         # continue the search in the child next (=nxtNode)
-#                         terminated = self.DFS_search(discovered, terminated, steps)
-#                     else:
-#                         # self.current_env
-#                         #print(f"----\nelse: nxtNode is None  for action:{ACTION_LOOKUP[len(stack)]} when room_state is\n{self.current_node.room_state}")
-#                         #print(f"     {len(self.current_node.get_all_feasible_children())}")
-#                         print(f"else:  {ACTION_LOOKUP_CHARS[len(stack)]}")
-#                         if nxtNode is not None:
-#                             print(tuple(nxtNode.room_state.flatten()) in discovered)
-#
-#                     #     print(f"nxtNode.action = {nxtNode.action}")
-#                     # # Continue the search from the next Node.
-#                     #
-#                     # terminated = nxtNode.DFS_search(discovered, terminated)
-#
-#                     # if not terminated:
-#                     #     terminated = False
-#
-#                 print(f"FOUND={terminated}")
-#                 return terminated
-#
-#         return False
-#
-#
-
-
-
-##############################################################################
-# Global methods                                                             #
-##############################################################################
-
 def convert_room_state_to_output_format(mat):
     for key, value in LEVEL_FORMAT.items():
         mat[mat==str(key)] = value
@@ -1047,6 +637,18 @@ ACTION_LOOKUP_CHARS = {
     6: 'd',
     7: 'l',
     8: 'r',
+}
+
+CHARS_LOOKUP_ACTIONS = {
+    'n': 0,
+    'U': 1,
+    'D': 2,
+    'L': 3,
+    'R': 4,
+    'u': 5,
+    'd': 6,
+    'l': 7,
+    'r': 8,
 }
 
 # Moves are mapped to coordinate changes as follows

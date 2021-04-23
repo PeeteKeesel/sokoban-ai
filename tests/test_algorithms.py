@@ -1,5 +1,7 @@
 import random
 import time
+from copy import deepcopy
+
 import numpy as np
 
 from gym_sokoban.envs.sokoban_env   import SokobanEnv, ACTION_LOOKUP_CHARS
@@ -28,10 +30,11 @@ class TestAlgorithms(unittest.TestCase):
 
         if print_board:
             print(f"\n---\nroom of size {dim_room} with {num_boxes} boxes and random_seed={random_seed}")
-            print(self.mock_env.room_state)
+            self.mock_env.render_colored()
+            #print(self.mock_env.room_state)
 
     def test_optimal(self):
-        self.setUp()
+        self.setUp(dim_room=(10, 10), num_boxes=2)
 
         o_10x10 = ['d', 'r', 'd', 'r', 'r', 'u', 'u', 'l', 'u', 'r', 'u', 'r', 'U', 'r', 'u', 'L', 'r', 'd', 'l', 'l', 'l', 'l',
          'u', 'r', 'R', 'l', 'l', 'd', 'r', 'r', 'd', 'l', 'd', 'r', 'd', 'l', 'L', 'r', 'r', 'd', 'd', 'l', 'l', 'l',
@@ -48,7 +51,9 @@ class TestAlgorithms(unittest.TestCase):
         o_10x10_ucs = ['R', 'R', 'U', 'R', 'D', 'L', 'U', 'U', 'R', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'L', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'R', 'D', 'L', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'R', 'U', 'U', 'R', 'R', 'D', 'L', 'L', 'D', 'L', 'D', 'R', 'D', 'L', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'D', 'D', 'D', 'D', 'R', 'D', 'L', 'D', 'L', 'L', 'U', 'U', 'R', 'R', 'D', 'R', 'U']
         sol10x10_2 = ['R', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'L', 'R', 'U', 'U', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'R', 'D', 'D', 'L', 'L', 'L', 'U', 'U', 'R', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'D', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'D', 'D', 'L', 'U', 'R', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'U', 'L', 'L', 'D', 'R', 'D', 'D', 'D', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'D', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L']
 
-        o = sol10x10_2
+        zehn = ['R', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'L', 'R', 'U', 'U', 'R', 'U', 'L', 'D', 'L', 'D', 'D', 'R', 'D', 'D', 'L', 'L', 'L', 'U', 'U', 'R', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'U', 'U', 'L', 'D', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'L', 'L', 'D', 'R', 'R', 'L', 'D', 'D', 'R', 'D', 'D', 'D', 'L', 'U', 'R', 'U', 'U', 'L', 'U', 'U', 'R', 'U', 'R', 'R', 'D', 'L', 'L', 'U', 'L', 'L', 'D', 'R', 'D', 'D', 'D', 'R', 'U', 'U', 'R', 'U', 'U', 'L', 'D', 'D', 'L', 'D', 'D', 'L', 'L', 'D', 'D', 'R', 'R', 'R', 'U', 'L']
+
+        o = zehn
 
         for a in o:
             self.mock_env.render()
@@ -136,11 +141,19 @@ class TestAlgorithms(unittest.TestCase):
     def test_a_start_search(self):
         print("test_a_start_search")
 
-        self.setUp(dim_room=(5, 5), num_boxes=1, print_board=True)
+        self.setUp(dim_room=(10, 10), num_boxes=3, print_board=True)
+        initialEnv = deepcopy(self.mock_env)
 
         start = time.time()
-        _, _ = astar(self.mock_env, print_steps=True)
+        _, node_env = astar(self.mock_env, print_steps=True)
         end = time.time()
+
+        initialEnv.render()
+        for a in node_env.action_trajectory:
+            initialEnv.render_colored()
+            time.sleep(1)
+            initialEnv.step(node_env.get_chars_lookup(a))
+            initialEnv.render()
 
         print(f"runtime: {round(end - start, 4)} seconds")
 
@@ -156,6 +169,7 @@ class TestAlgorithms(unittest.TestCase):
             start = time.time()
             _, _ = astar(self.mock_env, print_steps=True)
             end = time.time()
+
 
             current_time = end - start
             print(f"runtime: {round(current_time, 4)} seconds")
