@@ -1,14 +1,9 @@
-import time
-import random
-import numpy as np
-import os
-os.getcwd()
 import sys
 sys.path.append('my/path/to/module/folder')
 
 from gym_sokoban.envs.room_utils import *
 from gym_sokoban.envs.sokoban_env import *
-from gym_sokoban.envs.sokoban_env_variations import SokobanEnv1
+
 
 # ================================================================
 # Environment and Global Parameters
@@ -40,32 +35,21 @@ def _run():
     global counter
 
     actionsTaken = list()
+    totalReward = 0
 
-    for timestep in range(2):  # number of iterations
-        # env.render('format')#'raw', scale=2)
-        # time.sleep(1)  # to make the src moves more traceable
-        current_state = env.player_position
+    for timestep in range(5):
+        env.render('colored')
+
+        # Sample an action.
         a = env.action_space.sample()
-
-        #print(f"room_state=\n{env.room_state}")
-        #print(f"currentState = {current_state}")
-        #print(f"t={timestep} action taken = {a} = {ACTION_LOOKUP[a]}")
-        # print(f"t={timestep}  a={ACTION_LOOKUP[a]}  state={currentState}")
-        actionsTaken.append(a)
-
-        print(env.room_state)
-
-        room_structure = env.room_state.copy()
-        room_structure[room_structure == 5] = 1
-        room_structure[room_structure == 4] = 1
-
-        print("DFS starts")
-        #depth_first_search(env.room_state, room_structure, env.box_mapping)
+        actionsTaken.append(env.get_action_lookup_chars(a))
 
         # take a step
         observation, reward, done, info = env.step(a)
+        totalReward += reward
 
-        # episode has terminated
+        print(env.get_action_lookup_chars(a) + "  " + str(reward))
+
         if done:
             print("DONE: Episode finished after {} timesteps".format(timestep + 1))
             break
@@ -74,16 +58,10 @@ def _run():
             print("ALL BOXES ON TARGET: Episode finished after {} timesteps".format(timestep + 1))
             break
 
-        env.render('format')
-        #env.render('tiny_rgb_array', scale=scale_tiny)
-
-    ActionsTaken = [ACTION_LOOKUP[a] for a in actionsTaken]
     print(f"actionsTaken={actionsTaken}")
-    print(f"ActionsTaken={ActionsTaken}")
+    print(f"total reward={totalReward}")
 
-    if input():
-        env.close()
-
+    env.close()
 
 # ================================================================
 # Run the program

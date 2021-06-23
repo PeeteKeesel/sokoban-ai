@@ -148,6 +148,7 @@ class MctsNode:
         self.parent.revert_virtual_loss(up_to)
 
     def revert_visits(self, up_to):
+        """Undo the addition of visit counts."""
         self.N -= 1 
         if self.parent is None or self is up_to: 
             return 
@@ -168,7 +169,7 @@ class MctsNode:
         self.backup_value(value, up_to=up_to)
 
     def backup_value(self, value, up_to):
-        """Propagates a value estimation {@up_to} a node."""
+        """Propagates a value estimation to the node {@up_to}."""
         self.N += 1
         self.W += value
         # Note: Q doesn't need to be set as in the paper.
@@ -190,20 +191,27 @@ class MctsNode:
         dirich = np.random.dirichlet([D_NOISE_ALPHA] * self.n_actions)
         self.child_P = (1 - EPS) * self.child_P + EPS * dirich
 
-    def child_visits_as_probs(self, squash=False):
+    def get_action_probs(self, squash=False, temperature=1):
         """
         Returns the child visit counts as a probability distribution.
+        In the paper
+            pi(a|s0) = N(s_0,a)^{1/temp} / sum(N(s_0,b)^{1/temp})
+        where temp(erature) is a parameter that controls the level of
+        exploration.
 
         Arguments:
             squash (bool) - if True, exponentiate the probabilities
                             by a temperature slightly smaller than 1 to
                             encourage diversity in early steps.
-        Returns:
-            Numpy array of shape (n_actions).
+            temperature (float) - for the first TODO: X (=30 in the paper)
+                            moves it is 1. For the remainder of the game
+                            an infinitesimaly small value is used. We use 0.
+         Returns:
+            A policy vector containing probabilities for each of the n_actions.
         """
         probs = self.child_N
         if squash:
-            probs = probs ** .95
+            probs = probs ** (1. / temperature) # .95
         return probs / np.sum(probs)
 
     def print_tree(self, depth=0):
@@ -246,7 +254,7 @@ class Mcts:
         self.qs = []
         self.rewards = []
         self.searches_pi = []
-        self.obs = []
+        self.train_examples = []
 
         self.root = None
 
@@ -260,7 +268,7 @@ class Mcts:
         self.qs = []
         self.rewards = []
         self.searches_pi = []
-        self.obs = []
+        self.train_examples = []
 
     def tree_search(self, num_parallel=None):
         """
@@ -305,7 +313,7 @@ class Mcts:
         count will be chosen. Before that threshold a random action can be
         chosen.
         """
-        if self.root.depth > self.temp_threshold: 
+        if self.root.depth > self.temp_threshold:
             action = np.argmax(self.root.child_N)
         else:
             cdf = self.root.child_N.cumsum()
@@ -325,12 +333,13 @@ class Mcts:
         """
         # Store data to be used as experience tuples.
         ob = self.Env.get_obs_for_states([self.root.state])
-        self.obs.append(ob)
+        self.train_examples.append(ob)
         self.searches_pi.append(
-            self.root.visits_as_probs()) # TODO: Use self.root.position.n < self.temp_threshold as argument
+            self.root.get_action_probs()) # TODO: Use self.root.position.n < self.temp_threshold as argument
         self.qs.append(self.root.Q)
         # TODO: imoplement get_return function
-        reward = (self.Env.get_return(self.root.children[action].room_state, self.root.children[action].depth) - sum(self.rewards))
+        reward = (self.Env.get_return(self.root.children[action].room_state,
+                                      self.root.children[action].depth) - sum(self.rewards))
         self.rewards.append(reward)
 
         # Resulting state becomes new root of the tree.
@@ -384,36 +393,39 @@ class Mcts:
         """
         pass
 
-def execute_episode(agent_netw, num_simulations, Env):
+def execute_episode(agentNetw, numSimulations, Env):
     """
     Executes a single episode of the task using Monte-Carlo tree search with
     the given agent network. It returns the experience tuples collected during
     the search.
-    :param agent_netw: Network for predicting action probabilities and state
+
+    Arguments:
+        agentNetw: Network for predicting action probabilities and state
                        value estimates.
-    :param num_simulations: Number of simulations (traverses from root to leaf)
+        numSimulations: Number of simulations (traverses from root to leaf)
                             per action.
-    :param Env: Environment that describes the environment dynamics.
-    :return:
+        Env: Environment that describes the environment dynamics.
+
+    Returns:
     """
-    mcts = Mcts(agent_netw, Env)
+    mcts = Mcts(agentNetw, Env)
 
     mcts.initialize_search()
 
     # Must run this once at the start, so that noise injection actually affects
     # the first action of the episode.
-    first_node = mcts.root.select_leaf()
-    probs, vals = agent_netw.step(
-        Env.get_obs_for_states([first_node.state]))
-    first_node.incorporate_estimates(probs[0], vals[0], first_node)
+    firstNode = mcts.root.select_leaf()
+    probs, vals = agentNetw.step(
+        Env.get_obs_for_states([firstNode.state]))
+    firstNode.incorporate_estimates(probs[0], vals[0], firstNode)
 
     while True:
         mcts.root.inject_noise()
-        current_simulations = mcts.root.N
+        currentSimulations = mcts.root.N  # the # of times the node was visited
 
         # We want `num_simulations` simulations per action not counting
         # simulations from previous actions.
-        while mcts.root.N < current_simulations + num_simulations:
+        while mcts.root.N < currentSimulations + numSimulations:
             mcts.tree_search()
 
         # mcts.root.print_tree()
@@ -431,8 +443,8 @@ def execute_episode(agent_netw, num_simulations, Env):
     ret = [Env.get_return(mcts.root.state, mcts.root.depth) for _
            in range(len(mcts.rewards))]
 
-    total_rew = np.sum(mcts.rewards)
+    totalReward = np.sum(mcts.rewards)
 
     obs = np.concatenate(mcts.obs)
 
-    return obs, mcts.searches_pi, ret, total_rew, mcts.root.state
+    return obs, mcts.searches_pi, ret, totalReward, mcts.root.state

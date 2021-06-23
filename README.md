@@ -118,3 +118,8 @@ __How to construct the trees of MCTS?__
     - and execute the mcts steps from there 
     - __save the constructed tree for that state__ in memory !!! 
     - s.t. we have a tree for all visited board states 
+    
+- [ ] What is the input of the NN? The states of the last `x` moves? Only the current state? 
+    - if its the states of the last `x` moves then what the the layers detect?  
+    - if its the current state, should there be planes only containing subinformation like: 
+    the state but only the boxes in it. the state but only the goal states in it, ...? 

@@ -102,14 +102,14 @@ class TestSokobanEnv(unittest.TestCase):
         self.setUp()
 
         manh_dist_expect = 4
-        manh_dist_actual = self.mock_env.manhatten_distance(np.array([2, 3]), (5, 4))
+        manh_dist_actual = manhatten_distance(np.array([2, 3]), (5, 4))
 
         self.assertEqual(manh_dist_expect,
                          manh_dist_actual,
                          f"Manhattan distance between [2, 3] and [5, 4] should be {manh_dist_expect} but is {manh_dist_actual}")
 
         self.assertRaises(AssertionError,
-                          self.mock_env.manhatten_distance, np.array([2, 3, 4]), (5, 4))
+                          manhatten_distance, np.array([2, 3, 4]), (5, 4))
 
     def test_manhattan_heuristic(self):
         self.setUp(print_board=False)

@@ -3,11 +3,14 @@ from gym.spaces.discrete import Discrete
 from gym.spaces          import Box
 from .room_utils         import generate_room
 from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
+from src.utils           import *
 
 from copy import deepcopy
 
 import gym
 import numpy as np
+
+
 
 class SokobanEnv(gym.Env):
     metadata = {
@@ -52,8 +55,15 @@ class SokobanEnv(gym.Env):
 
         self.children_states = []
 
-        #self.searchTree = SearchTree()
-        #self.solution = []
+        # Attributes which will be defined outside __init__
+        self.np_random         = None
+        self.new_box_position  = None
+        self.old_box_position  = None
+        self.room_fixed        = None
+        self.room_state        = None
+        self.box_mapping       = None
+        self.player_position   = None
+        self.num_env_steps     = None
 
         if reset:
             # Initialize Room
@@ -259,28 +269,17 @@ class SokobanEnv(gym.Env):
             return self.reset(second_player=second_player, render_mode=render_mode)
 
         self.player_position = np.argwhere(self.room_state == 5)[0]
-        self.num_env_steps   = 0
-        self.reward_last     = 0
+        self.num_env_steps = 0
+        self.reward_last = 0
         self.no_boxes_on_target = 0
-
-        # the positions of the boxes which are not on target states
-        #self.boxes_not_on_target = set(tuple(box)  for box  in np.argwhere(self.room_state == 4)[0])
-        # the positions of the boxes which are on target states
-        #self.boxes_on_target     = set(tuple(box)  for box  in np.argwhere(self.room_state == 3)[0])
-        # the positions of the target states for the boxes
-        #self.goals               = set(tuple(goal) for goal in np.argwhere(self.room_state == 2)[0])
-
-        # try:
-        # Set initial room_state as the root of the search tree.
-        #self.searchTree.set_root(self.room_state)
-        # except:
-        #     print(self.searchTree.get_root())
-        #     print("Root was already set")
 
         starting_observation = self.render(render_mode)
         return starting_observation
 
     def render_colored(self):
+        """
+        Render the room state in colored squares to the terminal.
+        """
         for x in range(self.room_state.shape[0]):
             for y in range(self.room_state.shape[1]):
                 end = "" if y < self.room_state.shape[0] - 1 else " "
@@ -355,21 +354,6 @@ class SokobanEnv(gym.Env):
     def print_room_state_using_format(self):
         print_room_state(convert_room_state_to_output_format(np.copy(self.room_state).astype('str')))
 
-    def manhatten_distance(self, pos1, pos2):
-        """
-        Returns the Manhattan distance between two 2-dimensional points.
-        Generally, in a 2d-grid: What is the minimal number of vertical and horizontal
-        steps to go to come from position {@pos1} to position {@pos2}.
-
-        Arguments:
-            pos1  (2d-list) or (2d-tuple)  - Position in a 2-dimensional plane.
-            pos2  (2d-list) or (2d-tuple) - Position in a 2-dimensional plane.
-        Returns:
-            (float)  - The Manhattan distance between pos1 and pos2.
-        """
-        assert len(pos1) == len(pos2) == 2
-        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
-
     def manhattan_heuristic(self):
         """
         A heuristic to estimate the cost of the current board.
@@ -386,14 +370,13 @@ class SokobanEnv(gym.Env):
             return 0
 
         # the manhattan distance of the player to the nearest box
-        min_dist_player_box = min([self.manhatten_distance(self.player_position, box) for box in boxes_not_on_target])
+        min_dist_player_box = min([manhatten_distance(self.player_position, box) for box in boxes_not_on_target])
 
         # sum of the distances of each box to its nearest goal
-        sum_min_dist_boxes_target = sum( min([self.manhatten_distance(target_state, box) for target_state in box_target_states])
+        sum_min_dist_boxes_target = sum( min([manhatten_distance(target_state, box) for target_state in box_target_states])
                                          for box in boxes_not_on_target )
 
         return min_dist_player_box + sum_min_dist_boxes_target
-
 
 
     ##############################################################################
@@ -502,165 +485,14 @@ class SokobanEnv(gym.Env):
             # TODO: dont call method inside method.
             return [index for index, value in enumerate(self.get_children()) if value is not None]
 
-    ##############################################################################
-    # Search Algorithms                                                          #
-    # Those algorithms serve as a comparison to the RL algorithms.               #
-    ##############################################################################
-
-    # ----------------------------------------------------------
-    # Depth first search algorithm
-
-    # ----------------------------------------------------------
-    # Breadth first search algorithm
-    def breadth_first_search(self):
-        """TODO"""
-        return
-
-    # ----------------------------------------------------------
-    # Best first search algorithm
-    def best_first_search(self):
-        """TODO"""
-        return
-
-    # ----------------------------------------------------------
-    # A* search algorithm
-    def a_star_search(self):
-        """TODO"""
-        return
-
-    # ----------------------------------------------------------
-    # Uniform cost search algorithm (Dijkstra algorithm)
-    def uniform_cost_search(self):
-        """TODO"""
-        return
-
-    ##############################################################################
-    # RL Algorithms                                                              #
-    ##############################################################################
-
-    # ----------------------------------------------------------
-    # Q-Learning
-    def q_learning(self):
-        """TODO"""
-        return
-
-    # ----------------------------------------------------------
-    # MCTS
-    def monte_carlo_tree_search(self):
-        """TODO"""
-        return
 
 
-def convert_room_state_to_output_format(mat):
-    for key, value in LEVEL_FORMAT.items():
-        mat[mat==str(key)] = value
-    return mat
-
-def print_room_state(mat):
-    for i in range(mat.shape[0]):
-        for j in range(mat.shape[1]):
-            print(mat[i][j], end='')
-        print()
-    print()
-
-BACKGROUND_COLORS = {"black": "0;{};40",
-                     "red": "0;{};41",
-                     "green": "0;{};42",
-                     "orange": "0;{};43",
-                     "blue": "0;{};44",
-                     "purple": "0;{};45",
-                     "dark green": "0;{};46",
-                     "white": "0;{};47"}
-
-COLORS = {"black": "30",
-          "red": "31",
-          "green": "32",
-          "orange": "33",
-          "blue": "34",
-          "purple": "35",
-          "olive green": "36",
-          "white": "37"}
 
 
-def colored_print(text, color, background_color, end=""):
-    """
-    Prints text with color.
-    """
-    color_string = BACKGROUND_COLORS[background_color].format(COLORS[color])
-    text = f"\x1b[{color_string}m{text}\x1b[0m{end}"
-    if end == "":
-        print(text, end=end)
-    else:
-        print(text)
+
+
+
 
 ##############################################################################
 # Global variables                                                           #
 ##############################################################################
-
-LEVEL_FORMAT = {
-    0: '#',  # wall
-    1: ' ',  # empty space
-    2: 'T',  # box target
-    3: '*',  # box on target
-    4: 'B',  # box not on target
-    5: '@',  # agent
-}
-
-BG_COLORS = {
-    0: "black",   # wall
-    1: "white",   # empty space
-    2: "red",     # box target
-    3: "blue",    # box on target
-    4: "orange",    # box not on target
-    5: "green",   # agent
-}
-
-ACTION_LOOKUP = {
-    0: 'no operation',
-    1: 'push up',
-    2: 'push down',
-    3: 'push left',
-    4: 'push right',
-    5: 'move up',
-    6: 'move down',
-    7: 'move left',
-    8: 'move right',
-}
-
-ACTION_LOOKUP_CHARS = {
-    0: 'n',
-    1: 'U',
-    2: 'D',
-    3: 'L',
-    4: 'R',
-    5: 'u',
-    6: 'd',
-    7: 'l',
-    8: 'r',
-}
-
-CHARS_LOOKUP_ACTIONS = {
-    'n': 0,
-    'U': 1,
-    'D': 2,
-    'L': 3,
-    'R': 4,
-    'u': 5,
-    'd': 6,
-    'l': 7,
-    'r': 8,
-}
-
-# Moves are mapped to coordinate changes as follows
-# 0: Move up
-# 1: Move down
-# 2: Move left
-# 3: Move right
-CHANGE_COORDINATES = {
-    0: (-1, 0),
-    1: (1, 0),
-    2: (0, -1),
-    3: (0, 1)
-}
-
-RENDERING_MODES = ['colored', 'rgb_array', 'human', 'tiny_rgb_array', 'tiny_human', 'raw', 'format']

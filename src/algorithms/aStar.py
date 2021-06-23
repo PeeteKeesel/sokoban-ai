@@ -48,7 +48,7 @@ def a_star_search(env: SokobanEnv, print_steps: bool=None):
         metrics['nodes_explored'].add(tuple(node_env.room_state.flatten()))
         children = node_env.get_children()
 
-        if not [child for child in children if child is not None]:  # todo: check this. does it make sense?
+        if not [child for child in children if child is not None]:  # todo: does it make sense?
             env_queue.pop()  # No children exist which are not None
 
         else:
