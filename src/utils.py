@@ -44,12 +44,10 @@ def colored_print(text, color, background_color, end=""):
         print(text)
 
 
-
 ##############################################################################
 # Global variables                                                           #
 #   Supporting variables for other files                                     #
 ##############################################################################
-
 
 LEVEL_FORMAT = {
     0: '#',  # wall
@@ -132,4 +130,3 @@ COLORS = {"black": "30",
           "purple": "35",
           "olive green": "36",
           "white": "37"}
-

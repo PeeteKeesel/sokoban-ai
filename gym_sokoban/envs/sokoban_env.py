@@ -5,11 +5,8 @@ from .room_utils         import generate_room
 from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
 from src.utils           import *
 
-from copy import deepcopy
-
 import gym
 import numpy as np
-
 
 
 class SokobanEnv(gym.Env):
@@ -484,15 +481,3 @@ class SokobanEnv(gym.Env):
         else:
             # TODO: dont call method inside method.
             return [index for index, value in enumerate(self.get_children()) if value is not None]
-
-
-
-
-
-
-
-
-
-##############################################################################
-# Global variables                                                           #
-##############################################################################
