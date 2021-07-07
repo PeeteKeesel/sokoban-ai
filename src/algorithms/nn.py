@@ -17,8 +17,8 @@ class SokobanNN(nn.Module):
     def __init__(self, Env: SokobanEnv, args):
         super(SokobanNN, self).__init__()
 
-        self.board_x, self.board_y = Env.dim_room
-        self.action_space = 8  #  TODO: get this from Env
+        self.dim_x, self.dim_y = Env.dim_room
+        self.action_space = len(SokobanEnv.get_action_lookup())
         self.args = args
 
         self.conv1 = nn.Conv2d(1, args.num_channels, kernel_size=3, stride=1, padding=1)
@@ -31,7 +31,9 @@ class SokobanNN(nn.Module):
         self.batchn3 = nn.BatchNorm2d(args.num_channels)
         self.batchn4 = nn.BatchNorm2d(args.num_channels)
 
-        self.fully_connected1 = nn.Linear(args.num_channels * (self.board_x-...) * (self.board_y-...), NUM_FEATURES)
+        self.fully_connected1 = nn.Linear(args.num_channels *
+                                            (self.dim_x-...) * (self.dim_y-...),
+                                          NUM_FEATURES)
         self.fully_connected_batchn1 = nn.BatchNorm1d(NUM_FEATURES)
 
         self.fully_connected2 = nn.Linear(NUM_FEATURES, 512)
@@ -58,3 +60,14 @@ class SokobanNN(nn.Module):
 
         return logits, policy, value
 
+    def step(self, obs):
+        """
+        Returns policy and value estimates for given observations.
+        :param obs: Array of shape [N] containing N observations.
+        :return: Policy estimate [N, n_actions] and value estimate [N] for
+        the given observations.
+        """
+        obs = torch.from_numpy(obs)
+        _, pi, v = self.forward(obs)
+
+        return pi.detach().numpy(), v.detach().numpy()

@@ -1,9 +1,26 @@
-
+import time
 
 ##############################################################################
 # Methods                                                                    #
 #   Supporting methods for other files                                       #
 ##############################################################################
+
+def log(test_env, iteration, step_idx, total_reward):
+    """
+    Logs one step in a testing episode.
+
+    Arguments:
+        test_env:       Test environemnt that should be rendered.
+        iteration:      Number of training iterations so far.
+        step_idx:       Index of the step in the episode.
+        total_reward:   Total reward collected so far.
+    """
+    time.sleep(.3)
+    print()
+    print(f"Training Episodes: {iteration}")
+    test_env.colored_print()
+    print(f"Step:   {step_idx}")
+    print(f"Return: {total_reward}")
 
 def manhatten_distance(pos1, pos2):
     """

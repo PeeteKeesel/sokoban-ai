@@ -122,6 +122,9 @@ class MctsNode:
     def maybe_add_child(self, action):
         """
         Adds child node for {@action} if it does not exist yet, and returns it.
+
+        Returns:
+            child node after taking {@action}
         """
         if action not in self.children:
             new_Env = deepcopy(self.Env)
@@ -205,7 +208,7 @@ class MctsNode:
                             encourage diversity in early steps.
             temperature (float) - for the first TODO: X (=30 in the paper)
                             moves it is 1. For the remainder of the game
-                            an infinitesimaly small value is used. We use 0.
+                            an infinitesimely small value is used. We use 0.
          Returns:
             A policy vector containing probabilities for each of the n_actions.
         """

@@ -41,8 +41,8 @@
     - [ ] implement MCTS for _Planning_
         - [ ] tests
 - [ ] AlphaGo 
-    - [ ] MCTS 
-    - [ ] Convolutional Neural Network 
+    - [x] MCTS 
+    - [ ] Integrate DCNN to predict value and probability of states 
 - [ ] Deep-Q-Learning
     - [ ] neural network 
     - [ ] tests  
@@ -58,3 +58,11 @@
 
 - [ ] Deadlock detection (helps making the game tree sparser)
 - [ ] change `dfs`, `bfs` to recursive implementation
+
+#### Questions 
+
+- When comparing the _previous_ and _new_ network's performance on 
+some level, how to choose for a set of Sokoban environments on where
+to test the performance on? 
+- How to structure the NN architecture? 
+- 

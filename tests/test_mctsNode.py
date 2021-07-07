@@ -4,7 +4,7 @@ import numpy as np
 
 from gym_sokoban.envs.sokoban_env  import SokobanEnv, ACTION_LOOKUP_CHARS
 from tests.testing_environment     import unittest
-from src.algorithms.mcts           import MctsNode
+from src.algorithms.mcts import MctsNode, execute_episode
 
 RANDOM_SEED = 0
 INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
@@ -148,6 +148,8 @@ class TestMctsNode(unittest.TestCase):
         child_after_8.is_expanded = True
         child_after_85 = child_after_8.maybe_add_child(5)
 
+        root.print_tree()
+
         leaf = root.select_until_leaf()
         leaf.Env.render_colored()
 
@@ -170,3 +172,10 @@ class TestMctsNode(unittest.TestCase):
         child_after_8.maybe_add_child(5)
 
         root.print_tree()
+
+    def test_execute_episode(self):
+        print("test_execute_episode()")
+
+        execute_episode(agentNetw=..., numSimulations=2, Env=SokobanEnv)
+
+        pass
