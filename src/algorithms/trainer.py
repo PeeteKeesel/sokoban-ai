@@ -15,25 +15,28 @@ class Trainer:
         self.step_model = Policy()
 
         value_criterion = nn.MSELoss()
-        optimizer = torch.optim.SGD(self.step_model.parameters(),
-                                    lr=learning_rate)
+        optimizer_sgd = torch.optim.SGD(self.step_model.parameters(),
+                                        lr=learning_rate)
+        optimizer_adam = torch.optim.Adam(self.step_model.parameters(),
+                                          lr=learning_rate)
+
 
         def train(obs, search_pis, returns):
             obs = torch.from_numpy(obs)
             search_pis = torch.from_numpy(search_pis)
             returns = torch.from_numpy(returns)
 
-            optimizer.zero_grad()
+            optimizer_adam.zero_grad()
             logits, policy, value = self.step_model(obs)
 
             logsoftmax = nn.LogSoftmax(dim=1)
             policy_loss = 5*torch.mean(torch.sum(-search_pis
                                                * logsoftmax(logits), dim=1))
             value_loss = value_criterion(value, returns)
-            loss = policy_loss + value_loss
+            total_loss = policy_loss + value_loss
 
-            loss.backward()
-            optimizer.step()
+            total_loss.backward()
+            optimizer_adam.step()
 
             return value_loss.data.numpy(), policy_loss.data.numpy()
 

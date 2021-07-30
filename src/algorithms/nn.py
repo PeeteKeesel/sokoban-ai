@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -7,6 +6,19 @@ import numpy as np
 from gym_sokoban.envs import SokobanEnv
 
 NUM_FEATURES = 1024
+
+import argparse
+description = "Sokoban AlphaGo"
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument('-lr',   '--learning_rate', type=float, dest='learningRate', default=.001, help="Learning rate")
+parser.add_argument('-dout', '--drop_out',      type=float, dest="dropout",      default=.3,   help="Drop out")
+parser.add_argument('-ep',   '--epochs',        type=int,   dest="epochs",       default=10,   help="Epochs of training")
+parser.add_argument('-bs',   '--batch_size',    type=int,   dest="batchSize",    default=64,   help="Batch size")
+parser.add_argument('-nCh',  '--num_channels',  type=int,   dest="numChannels",  default=3,    help="Number of channels")
+parser.add_argument('-nIter','--num_iters',     type=int,   dest="numIters",     default=1000, help="Number of training iterations")
+parser.add_argument('-nEps', '--num_eps',       type=int,   dest="numEps",       default=100,  help="Number of episodes")
+parser.add_argument('-nMctsSim', '--num_mcts_sim', type=int,dest="numMctsSim",   default=20,   help="Number of MCTS simulations")
+args = parser.parse_args()
 
 class SokobanNN(nn.Module):
     """
@@ -21,17 +33,17 @@ class SokobanNN(nn.Module):
         self.action_space = len(SokobanEnv.get_action_lookup())
         self.args = args
 
-        self.conv1 = nn.Conv2d(1, args.num_channels, kernel_size=3, stride=1, padding=1)
-        self.conv2 = nn.Conv2d(args.num_channels, args.num_channels, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(args.num_channels, args.num_channels, kernel_size=3, stride=1)
-        self.conv4 = nn.Conv2d(args.num_channels, args.num_channels, kernel_size=3, stride=1)
+        self.conv1 = nn.Conv2d(1, args.numChannels, kernel_size=3, stride=1, padding=1)
+        self.conv2 = nn.Conv2d(args.numChannels, args.numChannels, kernel_size=3, stride=1, padding=1)
+        self.conv3 = nn.Conv2d(args.numChannels, args.numChannels, kernel_size=3, stride=1)
+        self.conv4 = nn.Conv2d(args.numChannels, args.numChannels, kernel_size=3, stride=1)
 
-        self.batchn1 = nn.BatchNorm2d(args.num_channels)
-        self.batchn2 = nn.BatchNorm2d(args.num_channels)
-        self.batchn3 = nn.BatchNorm2d(args.num_channels)
-        self.batchn4 = nn.BatchNorm2d(args.num_channels)
+        self.batchn1 = nn.BatchNorm2d(args.numChannels)
+        self.batchn2 = nn.BatchNorm2d(args.numChannels)
+        self.batchn3 = nn.BatchNorm2d(args.numChannels)
+        self.batchn4 = nn.BatchNorm2d(args.numChannels)
 
-        self.fully_connected1 = nn.Linear(args.num_channels *
+        self.fully_connected1 = nn.Linear(args.numChannels *
                                             (self.dim_x-...) * (self.dim_y-...),
                                           NUM_FEATURES)
         self.fully_connected_batchn1 = nn.BatchNorm1d(NUM_FEATURES)

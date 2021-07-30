@@ -22,7 +22,7 @@ def log(test_env, iteration, step_idx, total_reward):
     print(f"Step:   {step_idx}")
     print(f"Return: {total_reward}")
 
-def manhatten_distance(pos1, pos2):
+def manhattan_distance(pos1, pos2):
     """
     Returns the Manhattan distance between two 2-dimensional points.
     Generally, in a 2d-grid: What is the minimal number of vertical and horizontal

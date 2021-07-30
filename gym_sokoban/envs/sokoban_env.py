@@ -363,15 +363,18 @@ class SokobanEnv(gym.Env):
         boxes_not_on_target = set(tuple(box) for box in np.argwhere(self.room_state == 4))
         box_target_states   = set(tuple(box) for box in np.argwhere(self.room_state == 2))
 
-        if self._check_if_all_boxes_on_target:  # All boxes are on targets.
+        if self._check_if_all_boxes_on_target():
             return 0
 
         # the manhattan distance of the player to the nearest box
-        min_dist_player_box = min([manhatten_distance(self.player_position, box) for box in boxes_not_on_target])
+        min_dist_player_box = min([manhattan_distance(self.player_position, box) for box in boxes_not_on_target])
 
         # sum of the distances of each box to its nearest goal
-        sum_min_dist_boxes_target = sum( min([manhatten_distance(target_state, box) for target_state in box_target_states])
+        sum_min_dist_boxes_target = sum( min([manhattan_distance(target_state, box) for target_state in box_target_states])
                                          for box in boxes_not_on_target )
+        print("hallo")
+        print(min_dist_player_box)
+        print(sum_min_dist_boxes_target)
 
         return min_dist_player_box + sum_min_dist_boxes_target
 
@@ -481,3 +484,10 @@ class SokobanEnv(gym.Env):
         else:
             # TODO: dont call method inside method.
             return [index for index, value in enumerate(self.get_children()) if value is not None]
+
+    def get_obs_for_states(self, states):
+        return np.array(states)
+
+    # TODO: implement this correctly.
+    def get_return(self, state, step_idx):
+        return self.reward_last + self.penalty_for_step

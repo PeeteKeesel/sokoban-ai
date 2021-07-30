@@ -3,6 +3,7 @@ import numpy as np
 
 from gym_sokoban.envs.sokoban_env import SokobanEnv
 from tests.testing_environment    import unittest
+from utils import manhattan_distance
 
 # ================================================================
 class TestSokobanEnv(unittest.TestCase):
@@ -102,23 +103,23 @@ class TestSokobanEnv(unittest.TestCase):
         self.setUp()
 
         manh_dist_expect = 4
-        manh_dist_actual = manhatten_distance(np.array([2, 3]), (5, 4))
+        manh_dist_actual = manhattan_distance(np.array([2, 3]), (5, 4))
 
         self.assertEqual(manh_dist_expect,
                          manh_dist_actual,
                          f"Manhattan distance between [2, 3] and [5, 4] should be {manh_dist_expect} but is {manh_dist_actual}")
 
         self.assertRaises(AssertionError,
-                          manhatten_distance, np.array([2, 3, 4]), (5, 4))
+                          manhattan_distance, np.array([2, 3, 4]), (5, 4))
 
     def test_manhattan_heuristic(self):
-        self.setUp(print_board=False)
+        self.setUp(print_board=True)
 
         manh_heur_expect = 1 + (1 + 1 + 2)
         manh_heur_actual = self.mock_env.manhattan_heuristic()
 
         self.assertEqual(manh_heur_expect,
-                         self.mock_env.manhattan_heuristic(),
+                         manh_heur_actual,
                          f"Manhattan heuristic should be {manh_heur_expect} but is {manh_heur_actual} for \n{self.mock_env.room_state}")
 
 

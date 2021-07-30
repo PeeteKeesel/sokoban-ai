@@ -30,6 +30,15 @@ ACTION_LOOKUP = env.get_action_lookup()
 # ================================================================
 def _run():
 
+    # obs, _, _, _ = env.step(0)
+    # print(obs)
+    # print(obs[1][1])
+    # print(obs[1][1].shape)
+    # print(obs.shape)
+    # env.render_colored()
+    # print(env.room_state)
+    # print(env.render('raw'))
+
     n_actions = len(ACTION_LOOKUP)
     n_obs = 50
 
@@ -45,7 +54,7 @@ def _run():
                        column_shapes=
                        { "ob": [],
                          "pi": [n_actions],
-                        "return": [] })
+                         "return": [] })
 
     def test_agent(iteration):
         """
@@ -82,7 +91,7 @@ def _run():
             plt.legend()
             plt.show()
 
-    # TODO: Check if this works in principal
+    # TODO: Check if this works without specifically caring about the NNet
     # Execute an episode with a specific number of simulations per step.
     observations, pis, returns, total_reward, done_state = execute_episode(
                                                             agentNetw=network,
