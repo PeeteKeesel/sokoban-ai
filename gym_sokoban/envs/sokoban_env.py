@@ -1,9 +1,12 @@
+from copy import deepcopy
+
 from gym.utils           import seeding
 from gym.spaces.discrete import Discrete
 from gym.spaces          import Box
-from .room_utils         import generate_room
+from .room_utils         import *
 from .render_utils       import room_to_rgb, room_to_tiny_world_rgb
 from src.utils           import *
+from typing              import List
 
 import gym
 import numpy as np
@@ -37,6 +40,12 @@ class SokobanEnv(gym.Env):
         self.reward_box_on_target   = 1    # Reward for pushing a box on a target
         self.reward_finished        = 10   # Reward for finishing the game
         self.reward_last            = 0    # Reward achieved by the previous step
+
+        # Other reward types: see 4.2 MCTS configuration
+        # self.reward_r0 = 1 if self._check_if_done() else 0
+
+        # TODO: or make this 'return' = discounted reward
+        self.total_reward = 0
 
         self.action_trajectory = []
 
@@ -108,6 +117,9 @@ class SokobanEnv(gym.Env):
             moved_player = self._move(action)
 
         self._calc_reward()
+
+        # NEW
+        self.update_total_reward()
         
         done = self._check_if_done()
 
@@ -127,6 +139,12 @@ class SokobanEnv(gym.Env):
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
 
         return observation, self.reward_last, done, info
+
+    # NEW
+    def steps(self, actions: List[int]):
+        """Apply multiple steps in the environment."""
+        for a in actions:
+            self.step(action=a)
 
     def _push(self, action):
         """
@@ -252,6 +270,68 @@ class SokobanEnv(gym.Env):
     def _check_if_maxsteps(self):
         return self.max_steps == self.num_env_steps
 
+    def _is_wall(self, pos):
+        return self.room_state[pos] == 0
+
+    def _in_corner(self):
+        """Checks if any of the boxes on the board is in a corner."""
+        boxPositions = np.where(self.room_state == 4)
+        boxPositions = list(zip(boxPositions[0], boxPositions[1]))
+        print(f"boxPositions={boxPositions}")
+
+        for boxPos in boxPositions:
+            n  = (boxPos[0] - 1, boxPos[1])
+            nw = (boxPos[0] - 1, boxPos[1] - 1)
+            w  = (boxPos[0],     boxPos[1] - 1)
+            sw = (boxPos[0] + 1, boxPos[1] - 1)
+            s  = (boxPos[0] + 1, boxPos[1])
+            se = (boxPos[0] + 1, boxPos[1] + 1)
+            e  = (boxPos[0],     boxPos[1] + 1)
+            ne = (boxPos[0] - 1, boxPos[1] + 1)
+            if (self._is_wall(n) and self._is_wall(nw) and self._is_wall(nw)) \
+                or (self._is_wall(w) and self._is_wall(sw) and self._is_wall(s)) \
+                or (self._is_wall(s) and self._is_wall(se) and self._is_wall(e)) \
+                or (self._is_wall(n) and self._is_wall(ne) and self._is_wall(e)):
+                return True
+
+        return False
+
+    def is_deadlock(self):
+        # temp_room_structure = self.room_state.copy()
+        # temp_room_structure[temp_room_structure == 5] = 1
+        # a, b, c = reverse_move(self.room_state, temp_room_structure,
+        #                        self.box_mapping, self.new_box_position, 1)
+        # print(self.room_state)
+        # print(f"a={a}\n b={b}\n c={c}")
+
+        if self.new_box_position is not None and \
+            self.new_box_position not in self.box_mapping and \
+            self._in_corner():
+            return True
+        return False
+
+    def deadlock_detection(self, actionToTake: int):
+        """
+        Checks if the the state after a taking a given action is a deadlock
+        state.
+
+        Arguments:
+            actionToTake: int - The action to take from the current state.
+        Returns:
+            Returns True if the state after {@actionToTake} was taken is a
+            deadlock, False if not.
+        """
+        assert actionToTake in self.action_space
+
+        envAfterAction = deepcopy(self)
+        envAfterAction.step(action=actionToTake)
+        envAfterAction.render_colored()
+
+        if envAfterAction.is_deadlock():
+            return True
+        return False
+
+
     def reset(self, second_player=False, render_mode='rgb_array'):
         try:
             self.room_fixed, self.room_state, self.box_mapping = generate_room(
@@ -372,9 +452,6 @@ class SokobanEnv(gym.Env):
         # sum of the distances of each box to its nearest goal
         sum_min_dist_boxes_target = sum( min([manhattan_distance(target_state, box) for target_state in box_target_states])
                                          for box in boxes_not_on_target )
-        print("hallo")
-        print(min_dist_player_box)
-        print(sum_min_dist_boxes_target)
 
         return min_dist_player_box + sum_min_dist_boxes_target
 
@@ -485,9 +562,16 @@ class SokobanEnv(gym.Env):
             # TODO: dont call method inside method.
             return [index for index, value in enumerate(self.get_children()) if value is not None]
 
+    # NEW
     def get_obs_for_states(self, states):
         return np.array(states)
 
-    # TODO: implement this correctly.
-    def get_return(self, state, step_idx):
-        return self.reward_last + self.penalty_for_step
+    # NEW
+    def update_total_reward(self):
+        self.total_reward += self.reward_last
+
+    # NEW
+    # TODO: implement this correctly. This is now just the total reward
+    def get_return(self, state=None, step_idx=None):
+        print(f"get_return() called! total_reward={self.total_reward}")
+        return self.total_reward

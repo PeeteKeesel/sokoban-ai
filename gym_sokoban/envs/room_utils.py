@@ -296,7 +296,7 @@ def reverse_move(room_state, room_structure, box_mapping, last_pull, action):
         box_mapping    (dict):        stores the initial and current position of each box.
                                       Used to calculate the box displacement for every box.
         last_pull      (tuple):       position to which the box was pushed
-        action         (int):         the reverse action to agent wants to do.
+        action         (int):         the reverse action the agent wants to do.
 
     Returns:
         room_state, box_mapping and last_pull after the reverse move
@@ -316,8 +316,10 @@ def reverse_move(room_state, room_structure, box_mapping, last_pull, action):
 
         # In addition try to pull a box if the action is a pull action
         if action < 4:
+            #print(f"change={change}")
             possible_box_location = change[0] * -1, change[1] * -1
             possible_box_location += player_position
+            #print(f"possible_box_location={possible_box_location}")
 
             if room_state[possible_box_location[0], possible_box_location[1]] in [3, 4]:
                 # Perform pull of the adjacent box

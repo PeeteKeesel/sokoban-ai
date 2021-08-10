@@ -72,7 +72,8 @@ class TestMcts(unittest.TestCase):
     def test_execute_episode(self):
         print("test_execute_episode()")
 
-        execute_episode(numSimulations=1, Env=self.mock_env)
+        execute_episode(numSimulations=10, Env=self.mock_env)
+
 
 
         pass

@@ -8,7 +8,7 @@ from utils import manhattan_distance
 # ================================================================
 class TestSokobanEnv(unittest.TestCase):
 
-    def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False):
+    def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False, render_board=False):
         self.mock_env = SokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
 
         self.mock_env.seed(RANDOM_SEED)
@@ -19,6 +19,10 @@ class TestSokobanEnv(unittest.TestCase):
 
         if print_board:
             print(self.mock_env.room_state)
+
+        if render_board:
+            self.mock_env.render_colored()
+
 
     def test_state_after_action(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, print_board=True)
@@ -121,6 +125,36 @@ class TestSokobanEnv(unittest.TestCase):
         self.assertEqual(manh_heur_expect,
                          manh_heur_actual,
                          f"Manhattan heuristic should be {manh_heur_expect} but is {manh_heur_actual} for \n{self.mock_env.room_state}")
+
+    def test_in_corner(self):
+        self.setUp(num_boxes=1, render_board=True)
+
+        self.assertFalse(self.mock_env._in_corner())
+
+        # 1st example
+        self.mock_env.steps([8, 5, 5, 7, 2])
+        self.assertTrue(self.mock_env._in_corner())
+
+        # 2nd example
+        self.setUp(num_boxes=1, render_board=True)
+        self.mock_env.steps([1, 1, 7, 5, 4])
+        self.assertTrue(self.mock_env._in_corner())
+
+        # 3rd example
+        self.setUp(num_boxes=1, render_board=True)
+        self.mock_env.steps([1, 1, 8, 5, 3, 3])
+        self.assertTrue(self.mock_env._in_corner())
+
+    def test_deadlock_detection(self):
+        self.setUp(num_boxes=1, render_board=True)
+
+        # Test corner deadlock.
+        self.mock_env.steps([8, 5, 5, 7])
+        self.assertTrue(self.mock_env.deadlock_detection(actionToTake=2),
+                        f"The room state after taking action 2 should be a deadlock.")
+
+        # TODO: test other deadlocks e.g. simple deadlocks
+
 
 
 RANDOM_SEED = 0

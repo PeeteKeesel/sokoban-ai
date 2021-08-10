@@ -36,6 +36,10 @@
         
 #### RL Algorithm Ideas 
         
+- [ ] implement MCTS and make it runnable
+    - different policies 
+        - `random`
+        - `eps-greedy`        
 - [ ] __Single Agent__ from _Feng et al., 2020_ ([page 6](https://arxiv.org/pdf/2008.05598v2.pdf))
     - [ ] implement Resnets/ConvNets for _Learning_
     - [ ] implement MCTS for _Planning_
@@ -43,9 +47,6 @@
 - [ ] AlphaGo 
     - [x] MCTS 
     - [ ] Integrate DCNN to predict value and probability of states 
-- [ ] Deep-Q-Learning
-    - [ ] neural network 
-    - [ ] tests  
     
 #### Additional Todos 
 
