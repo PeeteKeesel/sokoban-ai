@@ -30,6 +30,7 @@ class DummyNodeAboveRoot:
         self.parent = None
         self.child_N = collections.defaultdict(float)
         self.child_W = collections.defaultdict(float)
+        self.action_traj = []
 
     def revert_virtual_loss(self, up_to=None): pass
 
@@ -44,12 +45,17 @@ class DummyNodeAboveRoot:
 class MctsNode:
 
     def __init__(self, Env, n_actions, prev_action=None, parent=None):
-        self.Env = Env
+        self.Env = deepcopy(Env)
         if parent is None:
             self.depth = 0
             parent = DummyNodeAboveRoot()
+            self.action_traj = []
         else:
             self.depth = parent.depth + 1
+            if prev_action:
+                self.action_traj = parent.action_traj + [prev_action]
+            else:
+                self.action_traj = []
         self.parent      = parent
         self.room_state  = self.Env.get_room_state()
         self.n_actions   = n_actions  # Number of actions from the node
@@ -144,6 +150,7 @@ class MctsNode:
     def select_until_leaf_random(self):
         current = self
         while True:
+            print(f"WHILE current.N={current.N}   current.Env.reward_last={current.Env.reward_last}")
             current.N += 1
             if not current.is_expanded:
                 break
@@ -155,8 +162,11 @@ class MctsNode:
             # TODO: only action which are feasible, thus NO DEADLOCKS nor non-changing-actions
             # CHECK DEADLOCKS HERE
             if current.Env.deadlock_detection(random_action):
+                print(50*"#")
+                print(len(current.children.keys()))
                 print(f"Deadlock found for action {current.Env.get_action_lookup_chars(random_action)}")
                 # Only add child if its not a deadlock, TODO: then change the random probabilities
+                continue
             # CHECK IF ACTION IS FEASIBLE
             current = current.maybe_add_child(random_action)
         return current
@@ -174,10 +184,14 @@ class MctsNode:
         """
         if action not in self.children:
             new_Env = deepcopy(self.Env)
+            print(f"self.Env.reward_last={self.Env.reward_last}")
             new_Env.step(action)
+            print(f"new_Env.reward_last={new_Env.reward_last}")
             self.children[action] = MctsNode(
                 new_Env, new_Env.get_n_actions(),
                 prev_action=action, parent=self)
+
+        print(f"----------- {self.children[action].Env.reward_last}")
         return self.children[action]
 
     def add_virtual_loss(self, up_to):
@@ -261,6 +275,8 @@ class MctsNode:
         self.is_expanded = True
         self.original_P = self.child_P = action_probs
         # TODO: change reward_last to the value which in in the current state, so the total discounted reward
+
+        assert self.n_actions == len(self.children)
         self.child_W = np.ones([self.n_actions], dtype=np.float32) * value
         print(self.child_W)
         self.backup_value(value, up_to=up_to)
@@ -277,6 +293,11 @@ class MctsNode:
         self.parent.backup_value(value, up_to)
 
     def is_done(self):
+        if self.Env._check_if_done():
+            print(100*"+")
+            print("IS_DONE")
+            print(self.Env.render_colored())
+            print(100 * "-")
         return self.Env._check_if_done()
 
     def inject_noise(self):
@@ -317,6 +338,7 @@ class MctsNode:
         print(node)
         self.Env.render_colored()
         node =  f"Node: * prev_action={self.prev_action} = {self.Env.get_action_lookup_chars(self.prev_action)}" + \
+                f"\n      * action_traj= {self.Env.print_actions_as_chars(self.action_traj)}" + \
                 f"\n      * N={self.N}" + \
                 f"\n      * W={self.W}" + \
                 f"\n      * Q={self.Q}" + \
@@ -392,7 +414,8 @@ class Mcts:
             # If we encounter done-state, we do not need the agent network to
             # bootstrap. We can backup the value right away.
             if leaf.is_done():
-                value = self.Env.get_return(leaf.state, leaf.depth)
+                value = self.Env.get_return(leaf.Env.get_room_state(),
+                                            leaf.depth)
                 leaf.backup_value(value, up_to=self.root)
                 continue
             # Otherwise, discourage other threads to take the same trajectory
@@ -439,11 +462,13 @@ class Mcts:
             #self.root.print_tree()
             #print("_"*50)
             leaf = self.root.select_until_leaf_random()
-            print("   tree_search_random(): LEAF selected. ")
+            print(f"   tree_search_random(): LEAF selected.  {self.root.depth}  {self.root.action_traj}")
             # If we encounter done-state, we do not need the agent network to
             # bootstrap. We can backup the value right away.
             if leaf.is_done():
-                value = self.Env.get_return(leaf.state, leaf.depth)
+                print(f"//// if leaf.is_done()    \n {self.Env.render_colored()}  {self.root.action_traj}")
+                value = self.Env.get_return(leaf.Env.get_room_state(),
+                                            leaf.depth)
                 print(f"---total_reward={value}")
                 leaf.backup_value(value, up_to=self.root)
                 continue
@@ -614,6 +639,7 @@ def execute_episode(numSimulations, Env, simulation_policy="random"):
 
         action = mcts.pick_action()
         print(f"... picked action {action}={Env.get_action_lookup_chars(action)}")
+        print(mcts.rewards)
         mcts.take_action(action)
 
         if mcts.root.is_done():

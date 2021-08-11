@@ -4,6 +4,7 @@ import numpy as np
 from gym_sokoban.envs.sokoban_env import SokobanEnv
 from tests.testing_environment    import unittest
 from utils import manhattan_distance
+#$ from gym_sokoban.envs.sokoban_env import g
 
 # ================================================================
 class TestSokobanEnv(unittest.TestCase):
@@ -22,7 +23,6 @@ class TestSokobanEnv(unittest.TestCase):
 
         if render_board:
             self.mock_env.render_colored()
-
 
     def test_state_after_action(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, print_board=True)
@@ -155,6 +155,36 @@ class TestSokobanEnv(unittest.TestCase):
 
         # TODO: test other deadlocks e.g. simple deadlocks
 
+
+    ##############################################################################
+    # Test static-methods                                                        #
+    ##############################################################################
+    def test_get_actions_lookup_chars(self):
+        self.setUp()
+        self.assertEqual(
+            self.mock_env.get_actions_lookup_chars([2, 3, 4, 5]),
+            ["D", "L", "R", "u"],
+            "The chars for actions [2,3,4,5] should be ['D', 'L', 'R', 'u]''")
+
+        self.assertRaises(
+            AssertionError,
+            self.mock_env.get_actions_lookup_chars,
+            [2, 3, 9, 5])
+
+    def test_print_actions_as_chars(self):
+        self.setUp()
+
+        self.assertEqual(
+            self.mock_env.print_actions_as_chars([2,3,4,5]),
+            "DLRu",
+            "The joined chars for actions [2,3,4,5] should be 'DLRu'"
+        )
+
+        self.assertEqual(
+            self.mock_env.print_actions_as_chars([]),
+            "",
+            "The joined chars for actions [] should be ''"
+        )
 
 
 RANDOM_SEED = 0

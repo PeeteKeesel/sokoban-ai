@@ -119,7 +119,9 @@ class SokobanEnv(gym.Env):
         self._calc_reward()
 
         # NEW
+        print("=============== step() called ====================")
         self.update_total_reward()
+        print(f"self.total_reward={self.total_reward}")
         
         done = self._check_if_done()
 
@@ -259,6 +261,8 @@ class SokobanEnv(gym.Env):
                              got pushed onto the targets,
                        False, otherwise.
         """
+        if self._check_if_maxsteps():
+            print(f">>>>>   max steps of {self.max_steps} reached")
         return self._check_if_all_boxes_on_target() or self._check_if_maxsteps()
 
     def _check_if_all_boxes_on_target(self):
@@ -480,10 +484,25 @@ class SokobanEnv(gym.Env):
         return CHARS_LOOKUP_ACTIONS[action]
 
     @staticmethod
-    def get_action_lookup_chars(action):
+    def get_action_lookup_chars(action: int):
         if action in ACTION_LOOKUP_CHARS.keys():
             return ACTION_LOOKUP_CHARS[action]
         return None
+
+    @staticmethod
+    def get_actions_lookup_chars(actions: List[int]) -> List[str]:
+        actionsAsChars = []
+        for action in actions:
+            assert action in ACTION_LOOKUP.keys()
+            actionsAsChars.append(ACTION_LOOKUP_CHARS[action])
+        return actionsAsChars
+
+    @staticmethod
+    def print_actions_as_chars(actions: List[int]):
+        if actions:
+            actionsAsChars = SokobanEnv.get_actions_lookup_chars(actions)
+            return ''.join(actionsAsChars)
+        return ''
 
     def get_player_position(self):
         return self.player_position
@@ -568,6 +587,7 @@ class SokobanEnv(gym.Env):
 
     # NEW
     def update_total_reward(self):
+        print(f"update_total_reward() called!   reward_last={self.reward_last}   tot_reward={self.total_reward}")
         self.total_reward += self.reward_last
 
     # NEW

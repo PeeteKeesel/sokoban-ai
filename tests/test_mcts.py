@@ -17,9 +17,11 @@ INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
 # ================================================================
 class TestMcts(unittest.TestCase):
 
-    def setUp(self, dim_room=(6, 6), num_boxes=1, render_board=False,
-              print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = SokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
+    def setUp(self, dim_room=(6, 6), num_boxes=1, max_steps=150,
+              render_board=False, print_board=False, random_seed=RANDOM_SEED):
+        self.mock_env = SokobanEnv(dim_room=dim_room,
+                                   max_steps=max_steps,
+                                   num_boxes=num_boxes)
 
         self.mock_env.seed(random_seed)
         np.random.seed(random_seed)
@@ -71,8 +73,9 @@ class TestMcts(unittest.TestCase):
 
     def test_execute_episode(self):
         print("test_execute_episode()")
+        self.setUp(max_steps=50, render_board=True)
 
-        execute_episode(numSimulations=10, Env=self.mock_env)
+        execute_episode(numSimulations=20, Env=self.mock_env)
 
 
 
