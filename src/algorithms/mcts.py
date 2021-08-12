@@ -22,7 +22,7 @@ TEMP_THRESHOLD = 5
 # large constant used to ensure that rarely explored nodes are
 # considered promising. Used for SP-UCT.
 D = 10 # TODO: what value to choose?
-C = 2
+C = 1
 
 class DummyNodeAboveRoot:
 
@@ -45,7 +45,7 @@ class DummyNodeAboveRoot:
 class MctsNode:
 
     def __init__(self, Env, n_actions, prev_action=None, parent=None):
-        self.Env = deepcopy(Env)
+        self.Env = Env
         if parent is None:
             self.depth = 0
             parent = DummyNodeAboveRoot()
@@ -158,7 +158,9 @@ class MctsNode:
             # this would choose the max action based on the probabilities
             # np.random.choice(np.flatnonzero(current.child_P == current.child_P.max()))
             # we just choose randomly here.
-            random_action = np.random.choice(np.arange(1, self.n_actions))
+            # random_action = np.random.choice(np.arange(1, self.n_actions))
+            random_action = np.random.choice(current.Env.get_feasible_actions())
+            # print(f"                feasible actions={current.Env.get_feasible_actions()}")
             # TODO: only action which are feasible, thus NO DEADLOCKS nor non-changing-actions
             # CHECK DEADLOCKS HERE
             if current.Env.deadlock_detection(random_action):
@@ -166,6 +168,8 @@ class MctsNode:
                 print(len(current.children.keys()))
                 print(f"Deadlock found for action {current.Env.get_action_lookup_chars(random_action)}")
                 # Only add child if its not a deadlock, TODO: then change the random probabilities
+                continue
+            if random_action not in current.Env.get_feasible_actions():
                 continue
             # CHECK IF ACTION IS FEASIBLE
             current = current.maybe_add_child(random_action)
@@ -292,13 +296,15 @@ class MctsNode:
             return 
         self.parent.backup_value(value, up_to)
 
-    def is_done(self):
-        if self.Env._check_if_done():
-            print(100*"+")
-            print("IS_DONE")
-            print(self.Env.render_colored())
-            print(100 * "-")
-        return self.Env._check_if_done()
+    def game_is_done(self):
+        # if self.Env._check_if_all_boxes_on_target():
+        #     print(100*"++")
+        #     print(f"IS_DONE  {self.Env.print_actions_as_chars(self.action_traj)}")
+        #     print(self.Env.render_colored())
+        #     print(100 * "++")
+        #     return True
+        # return False
+        return self.Env._check_if_done() # this was before
 
     def inject_noise(self):
         """
@@ -334,7 +340,7 @@ class MctsNode:
         return probs / np.sum(probs)
 
     def print_tree(self, depth=0):
-        node = "|--- " + str(depth)
+        node = "|--- " + str(self.depth)
         print(node)
         self.Env.render_colored()
         node =  f"Node: * prev_action={self.prev_action} = {self.Env.get_action_lookup_chars(self.prev_action)}" + \
@@ -346,7 +352,8 @@ class MctsNode:
                 f"\n      * child_W={np.around(self.child_W, 3)}" + \
                 f"\n      * child_Q={np.around(self.child_Q, 3)}" + \
                 f"\n      * child_P={np.around(self.child_P, 3)}" + \
-                f"\n      * score={np.around(self.child_action_score, 3)}"
+                f"\n      * score={np.around(self.child_action_score, 3)}" + \
+                f"\n      * sp_uct={np.around(self.sp_uct, 3)}"
         print(node)
         for _, child in sorted(self.children.items()):
             child.print_tree(depth+1)
@@ -413,7 +420,7 @@ class Mcts:
             leaf = self.root.select_until_leaf()
             # If we encounter done-state, we do not need the agent network to
             # bootstrap. We can backup the value right away.
-            if leaf.is_done():
+            if leaf.game_is_done():
                 value = self.Env.get_return(leaf.Env.get_room_state(),
                                             leaf.depth)
                 leaf.backup_value(value, up_to=self.root)
@@ -461,17 +468,26 @@ class Mcts:
             failsafe += 1
             #self.root.print_tree()
             #print("_"*50)
+            # "random" or "eps-greedy"
             leaf = self.root.select_until_leaf_random()
-            print(f"   tree_search_random(): LEAF selected.  {self.root.depth}  {self.root.action_traj}")
+            print(f"   tree_search_random(): LEAF selected.  {self.root.depth}  {self.root.action_traj}   {leaf.Env.reward_last}")
             # If we encounter done-state, we do not need the agent network to
             # bootstrap. We can backup the value right away.
-            if leaf.is_done():
-                print(f"//// if leaf.is_done()    \n {self.Env.render_colored()}  {self.root.action_traj}")
-                value = self.Env.get_return(leaf.Env.get_room_state(),
-                                            leaf.depth)
+            if leaf.game_is_done():
+                print(f">>> if leaf.game_is_done()    \n root{self.Env.render_colored()} leaf{leaf.Env.render_colored()}  "
+                      f"root.action_traj={self.root.Env.print_actions_as_chars(self.root.action_traj)}   "
+                      f"leaf.action_traj={leaf.Env.print_actions_as_chars(leaf.action_traj)}")
+                # value = self.Env.get_return(leaf.Env.get_room_state(),
+                #                             leaf.depth)
+                value = leaf.Env.get_return()
                 print(f"---total_reward={value}")
                 leaf.backup_value(value, up_to=self.root)
+                # NEW - TODO: this can be removed
+                if self.root.parent.parent is not None:
+                    print(f"----------self.root.parent.child_W = {self.root.parent.child_W}  {self.root.parent.prev_action}"
+                          f"          self.root.child_W        = {self.root.child_W}  {self.root.prev_action}")
                 continue
+
             # Otherwise, discourage other threads to take the same trajectory
             # via virtual loss and enqueue the leaf for evaluation by agent
             # network.
@@ -480,6 +496,8 @@ class Mcts:
 
         # Evaluate the leaf-states all at once and backup the value estimates.
         if leaves:
+            # TODO: Hier muss simuliert werden, fuer max_steps oder bis end_state erreicht ist. Die erreichten returns
+            #       muessen dann zum leaf node, von dem die SImulation gestartet ist, geupdatet werden!!!!!
             # 1st simulation policy: random
             if self.simulation_policy == "random":
                 print(f"simulation_policy={self.simulation_policy}")
@@ -512,19 +530,40 @@ class Mcts:
         chosen.
         """
         print(self.root.child_N)
-        if self.root.depth > self.temp_threshold:
-            action = np.argmax(self.root.child_N)
+        # NEW
+        # action = np.argmax(self.root.child_W)
+        #return np.argmax(self.root.child_W)
+        if self.root.depth > 8:
+            action = np.argmax(self.root.sp_uct)
+            print(f"pick_action() returns {action}={self.Env.get_action_lookup_chars(action)}  because {self.root.sp_uct}")
         else:
             cdf = self.root.child_N.cumsum()
             cdf = cdf / cdf[-1]  # probabilities for each action depending on the
                                  # visit counts.
             selection = random.random()
             action = cdf.searchsorted(selection)
+            print(f"pick_action() returns {action}={self.Env.get_action_lookup_chars(action)}  from {self.root.child_N}")
             #print(50*"===")
             #self.root.print_tree()
             assert self.root.child_N[action] != 0
-        print(f"pick_action() returns {action}={self.Env.get_action_lookup_chars(action)}")
         return action
+        # OLD - but this is correct TODO uncomment this
+        # if self.root.depth > self.temp_threshold:
+        #     print(f"if   {self.root.depth}")
+        #     action = np.argmax(self.root.child_N)
+        # else:
+        #     print("else")
+        #     cdf = self.root.child_N.cumsum()
+        #     cdf = cdf / cdf[-1]  # probabilities for each action depending on the
+        #                          # visit counts.
+        #     selection = random.random()
+        #     action = cdf.searchsorted(selection)
+        #     print(f"action={action}   from {self.root.child_N}")
+        #     #print(50*"===")
+        #     #self.root.print_tree()
+        #     assert self.root.child_N[action] != 0
+        # print(f"pick_action() returns {action}={self.Env.get_action_lookup_chars(action)}  because {self.root.child_N}")
+        # return action
 
     def take_action(self, action: int):
         """
@@ -591,7 +630,7 @@ def execute_episode_with_nnet(agentNetw, numSimulations, Env):
         action = mcts.pick_action()
         mcts.take_action(action)
 
-        if mcts.root.is_done():
+        if mcts.root.game_is_done():
             break
 
     # Computes the returns at each step from the list of rewards obtained at
@@ -638,12 +677,25 @@ def execute_episode(numSimulations, Env, simulation_policy="random"):
         print("_"*100)
 
         action = mcts.pick_action()
-        print(f"... picked action {action}={Env.get_action_lookup_chars(action)}")
+        print(f"... picked action {action}={Env.get_action_lookup_chars(action)}  with action_traj={mcts.root.Env.print_actions_as_chars(mcts.root.action_traj)}")
         print(mcts.rewards)
-        mcts.take_action(action)
+        if action > 0:
+            mcts.take_action(action)
 
-        if mcts.root.is_done():
+        if mcts.root.Env._check_if_all_boxes_on_target():
+            print("++"*1000)
+            print(f"IF MCTS.ROOT.IS_DONE() - all boxes on target - after {currentSimulations} simulations with action_traj = {mcts.root.Env.print_actions_as_chars(mcts.root.action_traj)}")
+            print("++" * 1000)
             break
+
+        if mcts.root.game_is_done():
+            print("++"*1000)
+            print(f"IF MCTS.ROOT.IS_DONE() after {currentSimulations} simulations with action_traj = {mcts.root.Env.print_actions_as_chars(mcts.root.action_traj)}")
+            print("++" * 1000)
+            break
+        # if currentSimulations > numSimulations:
+        #     print("BREAK")
+        #     break
 
 
     print("after")

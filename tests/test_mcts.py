@@ -73,9 +73,12 @@ class TestMcts(unittest.TestCase):
 
     def test_execute_episode(self):
         print("test_execute_episode()")
-        self.setUp(max_steps=50, render_board=True)
+        self.setUp(dim_room=(7,7), max_steps=10, render_board=True, num_boxes=2)
 
-        execute_episode(numSimulations=20, Env=self.mock_env)
+        # num_episodes = 10
+        # for i in range(num_episodes):
+        #     print(200*"$$"+" episode " + str(i))
+        execute_episode(numSimulations=50, Env=self.mock_env)
 
 
 

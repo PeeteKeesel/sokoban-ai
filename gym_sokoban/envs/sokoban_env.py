@@ -523,6 +523,7 @@ class SokobanEnv(gym.Env):
                 children[action] = state_after_action['new_state']
 
         self.children_states = children
+        # print(f"        self.children_states = {np.where(np.array([i is not None for i in self.children_states]) == True)[0]} ")
 
         return children
 
@@ -575,11 +576,11 @@ class SokobanEnv(gym.Env):
 
     def get_feasible_actions(self):
         """Returns the indices of all feasible actions from the state."""
-        if self.children_states:
-            return [index for index, value in enumerate(self.children_states) if value is not None]
-        else:
-            # TODO: dont call method inside method.
-            return [index for index, value in enumerate(self.get_children()) if value is not None]
+        # if self.children_states:
+        #     return [index for index, value in enumerate(self.children_states) if value is not None]
+        # else:
+        #     return [index for index, value in enumerate(self.get_children()) if value is not None]
+        return [index for index, value in enumerate(self.get_children()) if value is not None]
 
     # NEW
     def get_obs_for_states(self, states):
