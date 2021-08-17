@@ -73,12 +73,16 @@ class TestMcts(unittest.TestCase):
 
     def test_execute_episode(self):
         print("test_execute_episode()")
-        self.setUp(dim_room=(7,7), max_steps=10, render_board=True, num_boxes=2)
+        self.setUp(dim_room=(6, 6), max_steps=5, render_board=True, num_boxes=1)
 
         # num_episodes = 10
         # for i in range(num_episodes):
         #     print(200*"$$"+" episode " + str(i))
-        execute_episode(numSimulations=50, Env=self.mock_env)
+        execute_episode(numSimulations=5,  # number of simulations per state.
+                        Env=self.mock_env,
+                        max_rollouts=10,   # number of times an action will be picked
+                                           # after the simulations.
+                        max_depth=6)      # max number of steps per simulation.
 
 
 

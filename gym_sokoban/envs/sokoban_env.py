@@ -119,9 +119,9 @@ class SokobanEnv(gym.Env):
         self._calc_reward()
 
         # NEW
-        print("=============== step() called ====================")
+        #print("=============== step() called ====================")
         self.update_total_reward()
-        print(f"self.total_reward={self.total_reward}")
+        #print(f"self.total_reward={self.total_reward}")
         
         done = self._check_if_done()
 
@@ -261,8 +261,11 @@ class SokobanEnv(gym.Env):
                              got pushed onto the targets,
                        False, otherwise.
         """
-        if self._check_if_maxsteps():
-            print(f">>>>>   max steps of {self.max_steps} reached")
+        #if self._check_if_maxsteps():
+        #    print(f">>>>>>>>   max_steps of {self.max_steps} reached.")
+        #elif self._check_if_all_boxes_on_target():
+        #    print(f">>>>>>>>   all boxes are on target. after {self.action_trajectory} <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        #    self.render_colored()
         return self._check_if_all_boxes_on_target() or self._check_if_maxsteps()
 
     def _check_if_all_boxes_on_target(self):
@@ -281,7 +284,7 @@ class SokobanEnv(gym.Env):
         """Checks if any of the boxes on the board is in a corner."""
         boxPositions = np.where(self.room_state == 4)
         boxPositions = list(zip(boxPositions[0], boxPositions[1]))
-        print(f"boxPositions={boxPositions}")
+        #print(f"boxPositions={boxPositions}")
 
         for boxPos in boxPositions:
             n  = (boxPos[0] - 1, boxPos[1])
@@ -328,12 +331,36 @@ class SokobanEnv(gym.Env):
         assert actionToTake in self.action_space
 
         envAfterAction = deepcopy(self)
-        envAfterAction.step(action=actionToTake)
-        envAfterAction.render_colored()
+        _, rew, _, _ = envAfterAction.step(action=actionToTake)
+        # envAfterAction.render_colored()
 
-        if envAfterAction.is_deadlock():
+        if envAfterAction.is_deadlock() and np.abs(envAfterAction.reward_last - self.reward_last) < envAfterAction.reward_box_on_target:
             return True
         return False
+
+    def deadlock_detection_multiple(self, actionsToTake: List[int]):
+        """
+        Performs a simple deadlock detection for multiple actions and returns
+        a list containing if the action results in a deadlock or not.
+
+        Returns:
+            List[bool] - List containing True, if the action on the
+                         corresponding index in {@actionsToTake} results in a
+                         deadlock, False, otherwise.
+        """
+        return np.array([self.deadlock_detection(a) for a in actionsToTake])
+
+
+    def get_non_deadlock_feasible_actions(self):
+        """Returns all feasible actions excluding deadlock actions."""
+        feasible_actions = self.get_feasible_actions()
+        deadlocks = self.deadlock_detection_multiple(feasible_actions)
+        idxsToRemove = []
+        for i, elem in enumerate(feasible_actions):
+            if deadlocks[i]:
+                idxsToRemove.append(i)
+
+        return np.delete(feasible_actions, idxsToRemove)
 
 
     def reset(self, second_player=False, render_mode='rgb_array'):
@@ -465,7 +492,11 @@ class SokobanEnv(gym.Env):
     ##############################################################################
 
     def get_room_state(self):
-        return self.room_state
+        return self.room_state.copy()
+
+    def get_current_state(self):
+        current_state = (self.no_boxes_on_target, self.num_env_steps, self.player_position.copy(), self.room_state.copy())
+        return current_state
 
     @staticmethod
     def get_n_actions():
@@ -588,11 +619,11 @@ class SokobanEnv(gym.Env):
 
     # NEW
     def update_total_reward(self):
-        print(f"update_total_reward() called!   reward_last={self.reward_last}   tot_reward={self.total_reward}")
+        #print(f"update_total_reward() called!   reward_last={self.reward_last}   tot_reward={self.total_reward}")
         self.total_reward += self.reward_last
 
     # NEW
     # TODO: implement this correctly. This is now just the total reward
     def get_return(self, state=None, step_idx=None):
-        print(f"get_return() called! total_reward={self.total_reward}")
+        #print(f"get_return() called! total_reward={self.total_reward}")
         return self.total_reward
