@@ -3,10 +3,6 @@
 Sokoban is Japanese for warehouse keeper and a traditional video game. The game is a transportation
 puzzle, where the player has to push all boxes in the room on the storage locations (targets). 
 
-| Sokoban-v0 Example | Sokoban-v1 Example | Sokoban-v2 Example |
-| :---: | :---: | :---: 
-| ![v-0](/docs/imgs/Sokoban-v0-Example.png?raw=true) | ![v-1](/docs/imgs/Sokoban-v1-Example.png?raw=true) | ![v-2](/docs/imgs/Sokoban-v2-Example.png?raw=true) |
-
 The following algorithms will be implemented. As a comparison for the RL approaches we implement 
 basic search algorithms as 
     
