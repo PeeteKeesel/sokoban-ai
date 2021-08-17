@@ -1,3 +1,4 @@
+import argparse
 import sys
 
 from gym_sokoban.envs.mcts_sokoban_env import MctsSokobanEnv
@@ -125,31 +126,58 @@ RANDOM_SEED = 0
 #     #
 #     # env.close()
 
-def make_reproducible(env): 
-    # for reproducibility (since env is getting rendered randomly)
-    env.seed(RANDOM_SEED)  # always render the same environment
-    np.random.seed(RANDOM_SEED)  # always sample the same random number
-    random.seed(RANDOM_SEED)
-    env.action_space.seed(RANDOM_SEED)  # always take the same random action
+def make_reproducible(env, random_seed):
+    """
+    Since the environment is getting rendered randomly some reproducibility is
+    needed.
+
+    Arguments:
+        env         (MctsSokobanEnv) - Environment.
+        random_seed (int)            - Seed for repoducibility.
+    """
+    env.seed(random_seed)
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    env.action_space.seed(random_seed)
     env.reset()
 
 
-def mcts_solve(simulation_policy="random", max_rollouts=10, max_depth=20):
+def mcts_solve(args):
 
+    # Create the environment.
     env = gym.make("MCTS-Sokoban-v0",
                    dim_room=(6, 6),
-                   max_steps=max_depth,
-                   num_boxes=1)
-    make_reproducible(env)
+                   max_steps=args.max_steps,
+                   num_boxes=args.num_boxes)
+    make_reproducible(env, args.random_seed)
 
-    mcts = Mcts(env, simulation_policy, max_rollouts, max_depth)
+    # Initialize the Monte-Carlo-Tree-Search.
+    mcts = Mcts(Env=env,
+                simulation_policy=args.sim_policy,
+                max_rollouts=args.max_rollouts,
+                max_depth=args.max_depth)
     mcts.initialize_search()
 
+    # Must run this once at the start, so that noise injection actually affects
+    # the first action of the episode.
+    firstNode = mcts.root.select_and_expand()
+    firstNode.backpropagate(0, mcts.root)
+    firstNode.print_tree()
+
+    time_limit = arguments.time_limit * 60
     start_time = time()
 
-    env.render_colored()
+    while True:
+        now = time()
+        if now - start_time > time_limit:
+            print(f"Time limit of {args.time_limit} reached.")
+            break
 
-    mcts.root.print_tree()
+        # Run the Monte-Carlo-Tree-Search for the current state and take the
+        # best action after all simulations were performed.
+        _, reward, done, _ = mcts.take_best_action()
+
+
 
     # while True:
     #     now = time()
@@ -204,8 +232,25 @@ def mcts_solve(simulation_policy="random", max_rollouts=10, max_depth=20):
     # mcts.root.print_tree()
 
 
-# ================================================================
-# Run the program
 if __name__ == "__main__":
 
-    mcts_solve("random")
+    # Parse arguments.
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--random_seed", type=np.int, default=0,
+                        help="Seed to handle the rendered board")
+    parser.add_argument("--num_boxes", type=np.int, default=1,
+                        help="Number of boxes on the board")
+    parser.add_argument("--max_rollouts", type=np.int, default=10,
+                        help="Number of rollouts (simulations) per move")
+    parser.add_argument("--max_depth", type=np.int, default=5,
+                        help="Depth of each rollout")
+    parser.add_argument("--max_steps", type=np.int, default=120,
+                        help="Moves before game is lost")
+    parser.add_argument("--sim_policy", type=np.str, default="random",
+                        help="Simulation policy")
+    parser.add_argument("--time_limit", type=np.int, default=60,
+                        help="Time (in minutes) per board")
+    arguments = parser.parse_args()
+
+    # Solve the game.
+    mcts_solve(arguments)
