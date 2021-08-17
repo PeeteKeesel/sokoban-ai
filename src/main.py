@@ -138,7 +138,6 @@ def mcts_solve(simulation_policy="random", max_rollouts=10, max_depth=20):
 
     env = gym.make("MCTS-Sokoban-v0",
                    dim_room=(6, 6),
-                   original_map="...",
                    max_steps=max_depth,
                    num_boxes=1)
     make_reproducible(env)

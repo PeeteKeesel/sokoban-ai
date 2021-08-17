@@ -8,8 +8,7 @@ import numpy as np
 
 class MctsSokobanEnv(SokobanEnv):
 
-    def __init__(self, dim_room, num_boxes, original_map, max_steps=100):
-        self.original_map = original_map
+    def __init__(self, dim_room, num_boxes, max_steps=100):
 
         super(MctsSokobanEnv, self).__init__(dim_room, max_steps, num_boxes, None)
 

@@ -1,6 +1,7 @@
 import random
 import numpy as np
 
+from gym_sokoban.envs import MctsSokobanEnv
 from gym_sokoban.envs.sokoban_env import SokobanEnv
 from tests.testing_environment    import unittest
 from utils import manhattan_distance
@@ -10,7 +11,7 @@ from utils import manhattan_distance
 class TestSokobanEnv(unittest.TestCase):
 
     def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False, render_board=False):
-        self.mock_env = SokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
+        self.mock_env = MctsSokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
 
         self.mock_env.seed(RANDOM_SEED)
         np.random.seed(RANDOM_SEED)
