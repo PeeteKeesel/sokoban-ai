@@ -149,6 +149,8 @@ def mcts_solve(simulation_policy="random", max_rollouts=10, max_depth=20):
 
     env.render_colored()
 
+    mcts.root.print_tree()
+
     # while True:
     #     now = time()
 

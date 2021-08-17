@@ -1,8 +1,7 @@
 import random
-import time
 import numpy as np
 
-from gym_sokoban.envs.sokoban_env  import SokobanEnv, ACTION_LOOKUP_CHARS
+from gym_sokoban.envs import MctsSokobanEnv
 from tests.testing_environment     import unittest
 from src.algorithms.mcts import Mcts, MctsNode, execute_episode
 
@@ -19,7 +18,7 @@ class TestMcts(unittest.TestCase):
 
     def setUp(self, dim_room=(6, 6), num_boxes=1, max_steps=150,
               render_board=False, print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = SokobanEnv(dim_room=dim_room,
+        self.mock_env = MctsSokobanEnv(dim_room=dim_room,
                                    max_steps=max_steps,
                                    num_boxes=num_boxes)
 

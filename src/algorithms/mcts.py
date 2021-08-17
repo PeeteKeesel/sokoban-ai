@@ -104,6 +104,8 @@ class MctsNode:
         Single-player variant of the UCT algorithm. A child node is
         selected to maximize the outcome of this method.
         """
+        if np.all(self.child_N == 0):
+            return np.repeat(np.inf, self.n_actions)
         return self.child_Q / self.child_N\
                + C * np.sqrt(2 * np.log(self.N) /
                              self.child_N)\
@@ -220,7 +222,7 @@ class MctsNode:
             # Current node is fully extended with its feasible actions.
             else:
                 # Check which of the feasible actions have been visited yet.
-                if np.all(np.isnan(current.sp_uct[feasible_actions])):
+                if np.all(np.isinf(current.sp_uct[feasible_actions])):
                     rdm_action = np.random.choice(feasible_actions)
                     current = current.maybe_add_child(rdm_action)
                 else:
@@ -506,12 +508,12 @@ class Mcts:
                  max_rollouts=50, max_depth=20):
         """
         Arguments:
-            agent_netw            (NN)         - Network for predicting action
-                                                 probabilities and state value
-                                                 estimates.
-            Env                   (SokobanEnv) - Environment dynamics.
-            simulations_per_move  (int)        - Number of traversals through the
-                                                 tree before performing a step.
+            agent_netw            (NN)             - Network for predicting action
+                                                     probabilities and state value
+                                                     estimates.
+            Env                   (MctsSokobanEnv) - Environment dynamics.
+            simulations_per_move  (int)            - Number of traversals through the
+                                                     tree before performing a step.
         """
         self.Env = Env
         if agent_netw:
