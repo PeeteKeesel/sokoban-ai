@@ -1,3 +1,4 @@
+from .mcts_sokoban_env import MctsSokobanEnv
 from .sokoban_env import SokobanEnv
 from .sokoban_env_fixed_targets import FixedTargetsSokobanEnv
 from .sokoban_env_pull import PushAndPullSokobanEnv
@@ -330,4 +331,10 @@ class Boxban_Env1_val(BoxobanEnv):
     def __init__(self):
         super(Boxban_Env1_val, self).__init__(max_steps=200, difficulty='medium', split='valid')
 
+class MCTS_Sokoban_Env(MctsSokobanEnv):
+    metadata = {
+        'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array'],
+    }
 
+    def __init__(self, dim_room, num_boxes, original_map, max_steps=120):
+        super(MCTS_Sokoban_Env, self).__init__(dim_room, num_boxes, original_map, max_steps)

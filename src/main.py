@@ -1,31 +1,15 @@
 import sys
-sys.path.append('my/path/to/module/folder')
-import matplotlib.pyplot as plt
 
-from algorithms import Trainer, SokobanNN
+from gym_sokoban.envs.mcts_sokoban_env import MctsSokobanEnv
 from algorithms.mcts import execute_episode, Mcts
-from src.replay_memory import ReplayMemory
-
 from gym_sokoban.envs.room_utils import *
 from gym_sokoban.envs.sokoban_env import *
+from time import time, sleep
+
+sys.path.append('my/path/to/module/folder')
 
 
-# ================================================================
-# Environment and Global Parameters
 RANDOM_SEED = 0
-#env = SokobanEnv1(max_steps=1000)
-env = SokobanEnv(dim_room=(8, 8), num_boxes=1)
-# for reproducibility (since env is getting rendered randomly)
-env.seed(RANDOM_SEED)               # always render the same environment
-np.random.seed(RANDOM_SEED)         # always sample the same random number
-random.seed(RANDOM_SEED)
-env.action_space.seed(RANDOM_SEED)  # always take the same random action
-env.reset()
-
-
-# ================================================================
-ACTION_LOOKUP = env.get_action_lookup()
-
 
 # ================================================================
 # def _run():
@@ -141,14 +125,34 @@ ACTION_LOOKUP = env.get_action_lookup()
 #     #
 #     # env.close()
 
+def make_reproducible(env): 
+    # for reproducibility (since env is getting rendered randomly)
+    env.seed(RANDOM_SEED)  # always render the same environment
+    np.random.seed(RANDOM_SEED)  # always sample the same random number
+    random.seed(RANDOM_SEED)
+    env.action_space.seed(RANDOM_SEED)  # always take the same random action
+    env.reset()
 
-def mcts_solve(numSimulations, Env, simulation_policy="random", max_rollouts=10, max_depth=20):
-    env = SokobanEnv(dim_room=(6, 6), max_steps=max_depth, num_boxes=1)
 
-    mcts = Mcts(Env, simulation_policy, max_rollouts, max_depth)
+def mcts_solve(simulation_policy="random", max_rollouts=10, max_depth=20):
+
+    env = gym.make("MCTS-Sokoban-v0",
+                   dim_room=(6, 6),
+                   original_map="...",
+                   max_steps=max_depth,
+                   num_boxes=1)
+    make_reproducible(env)
+
+    mcts = Mcts(env, simulation_policy, max_rollouts, max_depth)
     mcts.initialize_search()
 
     start_time = time()
+
+    env.render_colored()
+
+    # while True:
+    #     now = time()
+
 
     # # Must run this once at the start, so that noise injection actually affects
     # # the first action of the episode.
@@ -202,4 +206,5 @@ def mcts_solve(numSimulations, Env, simulation_policy="random", max_rollouts=10,
 # ================================================================
 # Run the program
 if __name__ == "__main__":
-    mcts_solve()
+
+    mcts_solve("random")

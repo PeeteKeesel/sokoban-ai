@@ -118,5 +118,9 @@
   {
     "id": "Boxoban-Val-v1",
     "entry_point": "gym_sokoban.envs:Boxban_Env1_val"
+  },
+  {
+    "id": "MCTS-Sokoban-v0",
+    "entry_point": "gym_sokoban.envs:MCTS_Sokoban_Env"
   }
 ]
