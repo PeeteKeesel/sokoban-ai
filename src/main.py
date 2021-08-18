@@ -155,14 +155,14 @@ def mcts_solve(args):
     mcts = Mcts(Env=env,
                 simulation_policy=args.sim_policy,
                 max_rollouts=args.max_rollouts,
-                max_depth=args.max_depth)
+                max_depth=args.max_depth,
+                num_parallel=args.num_parallel)
     mcts.initialize_search()
 
     # Must run this once at the start, so that noise injection actually affects
     # the first action of the episode.
-    firstNode = mcts.root.select_and_expand()
-    firstNode.backpropagate(0, mcts.root)
-    firstNode.print_tree()
+    first_node = mcts.root.select_and_expand()
+    first_node.backpropagate(0, mcts.root)
 
     time_limit = arguments.time_limit * 60
     start_time = time()
@@ -171,12 +171,18 @@ def mcts_solve(args):
         now = time()
         if now - start_time > time_limit:
             print(f"Time limit of {args.time_limit} reached.")
-            break
+            # break
 
         # Run the Monte-Carlo-Tree-Search for the current state and take the
         # best action after all simulations were performed.
         _, reward, done, _ = mcts.take_best_action()
+        print(f"MAIN: reward={reward}")
 
+        if done:
+            print("MAIN: is done")
+            break
+
+    mcts.root.print_tree()
 
 
     # while True:
@@ -240,12 +246,15 @@ if __name__ == "__main__":
                         help="Seed to handle the rendered board")
     parser.add_argument("--num_boxes", type=np.int, default=1,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=10,
+    parser.add_argument("--max_rollouts", type=np.int, default=100,
                         help="Number of rollouts (simulations) per move")
     parser.add_argument("--max_depth", type=np.int, default=5,
                         help="Depth of each rollout")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")
+    parser.add_argument("--num_parallel", type=np.int, default=8,
+                        help="Number of leaf nodes to collect before "
+                             "evaluating them in conjunction")
     parser.add_argument("--sim_policy", type=np.str, default="random",
                         help="Simulation policy")
     parser.add_argument("--time_limit", type=np.int, default=60,

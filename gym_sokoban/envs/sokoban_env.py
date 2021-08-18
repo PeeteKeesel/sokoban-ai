@@ -261,6 +261,7 @@ class SokobanEnv(gym.Env):
                              got pushed onto the targets,
                        False, otherwise.
         """
+        #print(self.num_env_steps)
         #if self._check_if_maxsteps():
         #    print(f">>>>>>>>   max_steps of {self.max_steps} reached.")
         #elif self._check_if_all_boxes_on_target():
