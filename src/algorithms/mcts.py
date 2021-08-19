@@ -213,14 +213,13 @@ class MctsNode:
 
             feasible_actions = current.Env.get_feasible_actions()
 
-            # Current node is not fully expanded.
+            # Current node is not fully expanded. Expend one random action.
             if len(current.children) < len(feasible_actions):
                 return current.expand(feasible_actions)
 
             # Current node has no feasible actions to take.
             elif len(feasible_actions) == 0:
-                print("No feasible action from here!")
-                return NotImplementedError
+                raise Exception("No feasible action from here!")
 
             # Current node is fully extended with its feasible actions.
             else:
