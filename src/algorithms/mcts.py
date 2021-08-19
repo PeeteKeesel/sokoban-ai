@@ -430,7 +430,7 @@ class MctsNode:
             return 
         
         self.is_expanded = True
-        self.child_W = np.ones([self.n_actions], dtype=np.float32) * value
+        #self.child_W = np.ones([self.n_actions], dtype=np.float32) * value
         self.child_W[0] = -100
         self.backup_value(value, up_to=up_to)
 
@@ -822,7 +822,7 @@ class Mcts:
         if best_action == -1:
             return None, -1, True, {"mcts_giveup": "MCTS Gave up, board unsolvable. No moves where found from here."}
         observation, reward, done, info = self.Env.step(best_action)
-        return observation, reward, done, info
+        return observation, reward, done, info, best_action
 
 
     def mcts(self, env_state):

@@ -11,6 +11,8 @@ sys.path.append('my/path/to/module/folder')
 
 
 RANDOM_SEED = 0
+DIM_ROOM = 8
+NUM_BOXES = 2
 
 # ================================================================
 # def _run():
@@ -146,7 +148,7 @@ def mcts_solve(args):
 
     # Create the environment.
     env = gym.make("MCTS-Sokoban-v0",
-                   dim_room=(6, 6),
+                   dim_room=(args.dim_room, args.dim_room),
                    max_steps=args.max_steps,
                    num_boxes=args.num_boxes)
     make_reproducible(env, args.random_seed)
@@ -167,6 +169,7 @@ def mcts_solve(args):
     time_limit = arguments.time_limit * 60
     start_time = time()
 
+    a_traj = []
     while True:
         now = time()
         if now - start_time > time_limit:
@@ -175,15 +178,16 @@ def mcts_solve(args):
 
         # Run the Monte-Carlo-Tree-Search for the current state and take the
         # best action after all simulations were performed.
-        _, reward, done, _ = mcts.take_best_action()
+        _, reward, done, _, best_action = mcts.take_best_action()
         print(f"MAIN: reward={reward}")
+        a_traj.append(best_action)
 
         if done:
             print("MAIN: is done")
             break
 
     mcts.root.print_tree()
-
+    print(a_traj)
 
     # while True:
     #     now = time()
@@ -242,13 +246,15 @@ if __name__ == "__main__":
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--random_seed", type=np.int, default=0,
+    parser.add_argument("--random_seed", type=np.int, default=RANDOM_SEED,
                         help="Seed to handle the rendered board")
-    parser.add_argument("--num_boxes", type=np.int, default=1,
+    parser.add_argument("--dim_room", type=np.int, default=DIM_ROOM,
+                        help="Dimension of the Sokoban board")
+    parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=100,
+    parser.add_argument("--max_rollouts", type=np.int, default=200,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=5,
+    parser.add_argument("--max_depth", type=np.int, default=20,
                         help="Depth of each rollout")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")

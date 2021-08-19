@@ -146,12 +146,23 @@ class TestSokobanEnv(unittest.TestCase):
         self.mock_env.steps([1, 1, 8, 5, 3, 3])
         self.assertTrue(self.mock_env._in_corner())
 
+        # 4th example: 3 walls around the box.
+        self.setUp(dim_room=(8, 8), num_boxes=2, render_board=True)
+        self.mock_env.steps([2, 8, 6, 6, 7, 3, 5, 4, 4])
+        self.assertTrue(self.mock_env._in_corner())
+
     def test_deadlock_detection(self):
         self.setUp(num_boxes=1, render_board=True)
 
         # Test corner deadlock.
         self.mock_env.steps([8, 5, 5, 7])
         self.assertTrue(self.mock_env.deadlock_detection(actionToTake=2),
+                        f"The room state after taking action 2 should be a deadlock.")
+
+        # Test corner deadlock with 3 walls around the box.
+        self.setUp(dim_room=(8, 8), num_boxes=2, render_board=True)
+        self.mock_env.steps([2, 8, 6, 6, 7, 3, 5, 4])
+        self.assertTrue(self.mock_env.deadlock_detection(actionToTake=4),
                         f"The room state after taking action 2 should be a deadlock.")
 
         # TODO: test other deadlocks e.g. simple deadlocks
