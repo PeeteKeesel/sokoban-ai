@@ -8,10 +8,6 @@ import numpy as np
 import collections
 import math
 
-from typing import Tuple, List
-
-from gym_sokoban.envs import SokobanEnv
-
 c_PUCT = 1.38   # Constant determining the level of exploration.
 D_NOISE_ALPHA = 0.03  # Dirichlet noise alpha parameter to ensure exploration.
 EPS = 0.25  # To handle when to add Dirichlet noise.
@@ -19,13 +15,17 @@ EPS = 0.25  # To handle when to add Dirichlet noise.
 # action with highest action probability rather than selecting randomly.
 TEMP_THRESHOLD = 5
 
-# large constant used to ensure that rarely explored nodes are
+# Large constant used to ensure that rarely explored nodes are
 # considered promising. Used for SP-UCT.
 D = 10 # TODO: what value to choose?
 C = 1
 
+# Different types of simulation/rollout policies.
 SIMULATION_POLICIES = {"random": "random",
                        "eps-greedy": "eps-greedy"}
+
+# Transposition table which holds states which have already been expanded.
+TRANSPOSITION_TABLE = {}
 
 class DummyNodeAboveRoot:
 
@@ -211,7 +211,7 @@ class MctsNode:
             if not current.is_expanded:
                 break
 
-            feasible_actions = current.Env.get_feasible_actions()
+            feasible_actions = current.Env.get_feasible_actions(TRANSPOSITION_TABLE)
 
             # Current node is not fully expanded. Expend one random action.
             if len(current.children) < len(feasible_actions):
@@ -248,20 +248,19 @@ class MctsNode:
     def maybe_add_child(self, action):
         """
         Adds child node for {@action} if it does not exist yet, and returns it.
+        Expand only nodes that represent a state that has not yet been visited
+        via transposition tables.
 
         Returns:
             child node after taking {@action}
         """
         if action not in self.children:
-            new_Env = deepcopy(self.Env)
-            #print(f"self.Env.reward_last={self.Env.reward_last}")
-            new_Env.step(action)
-            #print(f"new_Env.reward_last={new_Env.reward_last}")
+            new_env = deepcopy(self.Env)
+            new_env.step(action)
             self.children[action] = MctsNode(
-                new_Env, new_Env.get_n_actions(),
+                new_env, new_env.get_n_actions(),
                 prev_action=action, parent=self)
 
-        #print(f"----------- {self.children[action].Env.reward_last}")
         return self.children[action]
 
     def add_virtual_loss(self, up_to):

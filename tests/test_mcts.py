@@ -13,14 +13,34 @@ INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
                                 [0, 0, 0, 5, 1, 0],
                                 [0, 0, 0, 0, 0, 0]])
 
+DIM_ROOM = (6, 6)
+NUM_BOXES = 1
+MAX_STEPS = 3
+MAX_DEPTH = 10
+MAX_ROLLOUTS = 10
+SIMULATION_POLICY = "random"
+NUM_PARALLEL = 8
+
 # ================================================================
 class TestMcts(unittest.TestCase):
 
-    def setUp(self, dim_room=(6, 6), num_boxes=1, max_steps=150,
+    def setUp(self, dim_room=DIM_ROOM, num_boxes=NUM_BOXES, max_steps=MAX_STEPS,
+              max_depth=MAX_DEPTH, max_rollouts=MAX_ROLLOUTS,
+              simulation_policy=SIMULATION_POLICY, num_parallel=NUM_PARALLEL,
               render_board=False, print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = MctsSokobanEnv(dim_room=dim_room,
-                                   max_steps=max_steps,
-                                   num_boxes=num_boxes)
+        self.mock_env = MctsSokobanEnv(
+                dim_room=dim_room,
+                max_steps=max_steps,
+                num_boxes=num_boxes
+        )
+
+        self.mcts = Mcts(
+                Env=self.mock_env,
+                simulation_policy=SIMULATION_POLICY,
+                max_rollouts=MAX_ROLLOUTS,
+                max_depth=MAX_DEPTH,
+                num_parallel=NUM_PARALLEL
+        )
 
         self.mock_env.seed(random_seed)
         np.random.seed(random_seed)
@@ -36,21 +56,19 @@ class TestMcts(unittest.TestCase):
             self.mock_env.render_colored()
 
     def test_sp_uct(self):
-        # TODO: optional to implement this unit test
         self.setUp()
         np.random.seed(0)
 
-        mcts = Mcts(self.mock_env)
-        mcts.initialize_search()
+        self.mcts.initialize_search()
         # set some mock values for N and W
-        mcts.root.child_N = np.arange(0,9) # np.random.randint(low=1, high=2, size=9)
-        mcts.root.child_W = np.random.randint(5, size=9)
+        self.mcts.root.child_N = np.arange(0,9) # np.random.randint(low=1, high=2, size=9)
+        self.mcts.root.child_W = np.random.randint(5, size=9)
 
         i_child = None
         # add mock children nodes for all actions
         for i in range(1, 9):
             #mcts.root.inject_noise()
-            i_child = mcts.root.maybe_add_child(i)
+            i_child = self.mcts.root.maybe_add_child(i)
 
 
         for j in range(2, 9):
@@ -60,8 +78,8 @@ class TestMcts(unittest.TestCase):
         i_child.child_N = np.arange(9, 18)  # np.random.randint(low=1, high=2, size=9)
         i_child.child_W = np.random.randint(5, size=9)
 
-        mcts.root.select_until_leaf()
-        mcts.root.print_tree()
+        self.mcts.root.select_until_leaf()
+        self.mcts.root.print_tree()
 
         print("..................")
         print(i_child.sp_uct)
@@ -82,7 +100,5 @@ class TestMcts(unittest.TestCase):
                         max_rollouts=10,   # number of times an action will be picked
                                            # after the simulations.
                         max_depth=6)      # max number of steps per simulation.
-
-
 
         pass

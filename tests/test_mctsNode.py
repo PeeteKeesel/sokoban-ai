@@ -1,10 +1,9 @@
 import random
-import time
 import numpy as np
 
-from gym_sokoban.envs.sokoban_env  import SokobanEnv, ACTION_LOOKUP_CHARS
-from tests.testing_environment     import unittest
-from src.algorithms.mcts import MctsNode
+from gym_sokoban.envs import MctsSokobanEnv
+from tests.testing_environment import unittest
+from src.algorithms.mcts import MctsNode, Mcts
 
 RANDOM_SEED = 0
 INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
@@ -14,22 +13,38 @@ INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
                                 [0, 0, 0, 5, 1, 0],
                                 [0, 0, 0, 0, 0, 0]])
 
+DIM_ROOM = (6, 6)
+NUM_BOXES = 1
+MAX_STEPS = 3
+MAX_DEPTH = 10
+MAX_ROLLOUTS = 10
+SIMULATION_POLICY = "random"
+NUM_PARALLEL = 8
+
 # ================================================================
 class TestMctsNode(unittest.TestCase):
 
-    def setUp(self, dim_room=(6, 6), num_boxes=1, render_board=False,
-              print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = SokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
+    def setUp(self, dim_room=DIM_ROOM, num_boxes=NUM_BOXES, max_steps=MAX_STEPS,
+              max_depth=MAX_DEPTH, max_rollouts=MAX_ROLLOUTS,
+              simulation_policy=SIMULATION_POLICY, num_parallel=NUM_PARALLEL,
+              render_board=False, print_board=False, random_seed=RANDOM_SEED):
+        self.mock_env = MctsSokobanEnv(
+                dim_room=DIM_ROOM,
+                num_boxes=NUM_BOXES,
+                max_steps=MAX_STEPS
+        )
 
-        self.mock_env.seed(random_seed)
-        np.random.seed(random_seed)
-        random.seed(random_seed)
-        self.mock_env.action_space.seed(random_seed)
+        self.mcts_node = MctsNode(self.mock_env, self.mock_env.get_n_actions())
+
+        self.mock_env.seed(RANDOM_SEED)
+        np.random.seed(RANDOM_SEED)
+        random.seed(RANDOM_SEED)
+        self.mock_env.action_space.seed(RANDOM_SEED)
         self.mock_env.reset()
 
         if print_board:
             print(f"\n---\nroom of size {dim_room} with {num_boxes} boxes and random_seed={random_seed}")
-            print(self.mock_env.room_state)
+            print(self.mock_env.get_room_state())
 
         if render_board:
             self.mock_env.render_colored()
@@ -177,6 +192,14 @@ class TestMctsNode(unittest.TestCase):
         print("test_execute_episode()")
 
         # execute_episode_with_nnet(numSimulatons=2, env=SokobanEnv)
+
+        pass
+
+    def test_maybe_add_child_transposition_tables(self):
+        self.setUp(render_board=True)
+
+
+        self.mock_env.step(1)
 
 
         pass

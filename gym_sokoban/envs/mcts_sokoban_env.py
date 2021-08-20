@@ -38,7 +38,6 @@ class MctsSokobanEnv(SokobanEnv):
                 children[action] = state_after_action['new_state']
 
         self.children_states = children
-        # print(f"        self.children_states = {np.where(np.array([i is not None for i in self.children_states]) == True)[0]} ")
 
         return children
 
@@ -91,10 +90,6 @@ class MctsSokobanEnv(SokobanEnv):
 
     def get_feasible_actions(self):
         """Returns the indices of all feasible actions from the state."""
-        # if self.children_states:
-        #     return [index for index, value in enumerate(self.children_states) if value is not None]
-        # else:
-        #     return [index for index, value in enumerate(self.get_children()) if value is not None]
         return [index for index, value in enumerate(self.get_children()) if value is not None]
 
 
