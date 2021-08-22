@@ -10,7 +10,7 @@ import math
 
 c_PUCT = 1.38   # Constant determining the level of exploration.
 D_NOISE_ALPHA = 0.03  # Dirichlet noise alpha parameter to ensure exploration.
-EPS = 0.25  # To handle when to add Dirichlet noise.
+EPS_DIRICH = 0.25  # To handle when to add Dirichlet noise.
 # Number of steps into the episode after which we always select the
 # action with highest action probability rather than selecting randomly.
 TEMP_THRESHOLD = 5
@@ -23,6 +23,11 @@ C = 1
 # Different types of simulation/rollout policies.
 SIMULATION_POLICIES = {"random": "random",
                        "eps-greedy": "eps-greedy"}
+
+# Probability for selection a random action. Used for the `eps-greedy`
+# simulation policy.
+EPS = 0.2
+
 
 class DummyNodeAboveRoot:
 
@@ -339,15 +344,59 @@ class MctsNode:
         print(f"np.sum(reward_per_simulation) = {np.sum(reward_per_simulation)}\n\n")
         return np.sum(reward_per_simulation)
 
-    def perform_simulation(self, max_depth):
+    # def perform_simulation(self, max_depth):
+    #     """
+    #     Performs the simulation step of the SP-MCTS. Starting from the current
+    #     MctsNode which should be a leaf node, we simulate until the game is
+    #     done, thus, either the maximal number of steps is reached or the game
+    #     is finished.
+    #
+    #     Returns:
+    #         (float): Total reward achieved by the simulation.
+    #     """
+    #     leaf = deepcopy(self)
+    #
+    #     # Perform a rollout.
+    #     tot_reward_of_simulation, simulation_act_traj, depth = 0, [], 0
+    #     while not leaf.game_is_done() and depth < max_depth:
+    #         # Get a list of all feasible actions, excluding redundant and
+    #         # deadlock actions.
+    #         #non_deads = leaf.Env.get_non_deadlock_feasible_actions()  # TODO: can be removed
+    #         random_action = np.random.choice(
+    #             leaf.Env.get_non_deadlock_feasible_actions()
+    #         )
+    #         simulation_act_traj.append(random_action)
+    #
+    #         # Make a random step in the environment.
+    #         _, reward_last, done, _ = leaf.Env.step(random_action)
+    #         depth += 1
+    #
+    #         # Update the total reward.
+    #         tot_reward_of_simulation += reward_last
+    #
+    #         # print(
+    #         #     15 * " " + f"PICKED action {leaf.Env.print_actions_as_chars([random_action])} "
+    #         #                f" out of possible={non_deads}  "
+    #         #                f" after = {leaf.Env.print_actions_as_chars(simulation_act_traj)}  and received={reward_last}")
+    #     print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(simulation_act_traj)}'\n" +\
+    #           15*" " + f"received total_reward= {tot_reward_of_simulation}")
+    #
+    #     return tot_reward_of_simulation - leaf.Env.manhattan_heuristic()
+
+    def perform_simulation(self, max_depth, sim_policy="random"):
         """
         Performs the simulation step of the SP-MCTS. Starting from the current
         MctsNode which should be a leaf node, we simulate until the game is
         done, thus, either the maximal number of steps is reached or the game
-        is finished.
+        is finished. The simulation is done using a specific simulation policy:
+            - random: Selects a random action among those available in the
+                      current state.
+            - eps-greedy: Selects a random action with probability EPS or with
+                          probability (1-EPS) the action that maximizes the
+                          the reward of the resulting state with probability.
 
         Returns:
-
+            (float): Total reward achieved by the simulation.
         """
         leaf = deepcopy(self)
 
@@ -356,14 +405,20 @@ class MctsNode:
         while not leaf.game_is_done() and depth < max_depth:
             # Get a list of all feasible actions, excluding redundant and
             # deadlock actions.
-            #non_deads = leaf.Env.get_non_deadlock_feasible_actions()  # TODO: can be removed
-            random_action = np.random.choice(
-                leaf.Env.get_non_deadlock_feasible_actions()
-            )
-            simulation_act_traj.append(random_action)
+            feasible_actions = leaf.Env.get_non_deadlock_feasible_actions()
+            sim_action = None
+            if sim_policy == SIMULATION_POLICIES["random"]:
+                sim_action = np.random.choice(feasible_actions)
+            elif sim_policy == SIMULATION_POLICIES["eps-greedy"]:
+                if np.random.uniform() < EPS:
+                    sim_action = np.random.choice(feasible_actions)
+                else:
+                    sim_action = leaf.Env.get_best_immediate_action(feasible_actions)
+
+            simulation_act_traj.append(sim_action)
 
             # Make a random step in the environment.
-            _, reward_last, done, _ = leaf.Env.step(random_action)
+            _, reward_last, done, _ = leaf.Env.step(sim_action)
             depth += 1
 
             # Update the total reward.
@@ -377,7 +432,6 @@ class MctsNode:
               15*" " + f"received total_reward= {tot_reward_of_simulation}")
 
         return tot_reward_of_simulation - leaf.Env.manhattan_heuristic()
-
 
 
     def incorporate_nn_estimates(self, action_probs, value, up_to):
@@ -481,7 +535,7 @@ class MctsNode:
         overrule bad moves. (as in the paper)
         """
         dirich = np.random.dirichlet([D_NOISE_ALPHA] * self.n_actions)
-        self.child_P = (1 - EPS) * self.child_P + EPS * dirich
+        self.child_P = (1 - EPS_DIRICH) * self.child_P + EPS_DIRICH * dirich
 
     def get_action_probs(self, squash=False, temperature=1):
         """
@@ -727,25 +781,33 @@ class Mcts:
 
         # Evaluate the child node and backup the value estimate.
         if leaf_node:
-            if leaf_node.depth == self.max_depth:
-                print(f"MAX_DEPTH {leaf_node.depth} REACHED, reward={leaf_node.W} parent_reward={leaf_node.parent.W}")
-                raise NotImplementedError
+            # if leaf_node.depth == self.max_depth:
+            #     print(f"MAX_DEPTH {leaf_node.depth} REACHED, reward={leaf_node.W} parent_reward={leaf_node.parent.W}")
+            #     return
 
+            # 3. Simulation step of the SP-MCTS. Simulate using random
+            # actions until the game is done, which can be either by
+            # finishing the game or by reaching the max no. of steps.
             if self.simulation_policy == SIMULATION_POLICIES["random"]:
-                # 3. Simulation step of the SP-MCTS. Simulate using random
-                # actions until the game is done, which can be either by
-                # finishing the game or by reaching the max no. of steps.
-                tot_reward = leaf_node.perform_simulation(self.max_depth)
-
-                # Update the total value for the current leaf node.
-                leaf_node.parent.child_W[leaf_node.prev_action] = tot_reward
-
-                # 4. Backpropagatiom step of the SP-MCTS.
-                leaf_node.backpropagate(value=tot_reward, up_to=self.root)
-
-                return
+                tot_reward = leaf_node.perform_simulation(
+                    self.max_depth,
+                    SIMULATION_POLICIES["random"]
+                )
+            elif self.simulation_policy == SIMULATION_POLICIES["eps-greedy"]:
+                tot_reward = leaf_node.perform_simulation(
+                    self.max_depth,
+                    SIMULATION_POLICIES["eps-greedy"]
+                )
             else:
                 raise NotImplementedError("ERROR: Simulation policies other than 'random' not implemented yet.")
+
+            # Update the total value for the current leaf node.
+            leaf_node.parent.child_W[leaf_node.prev_action] = tot_reward
+
+            # 4. Backpropagatiom step of the SP-MCTS.
+            leaf_node.backpropagate(value=tot_reward, up_to=self.root)
+
+            return
         raise Exception(f"ERROR: No leaf node found for {self.root.room_state}")
 
 

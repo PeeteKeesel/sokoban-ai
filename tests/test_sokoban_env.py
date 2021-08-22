@@ -2,10 +2,8 @@ import random
 import numpy as np
 
 from gym_sokoban.envs import MctsSokobanEnv
-from gym_sokoban.envs.sokoban_env import SokobanEnv
-from tests.testing_environment    import unittest
+from tests.testing_environment import unittest
 from utils import manhattan_distance
-#$ from gym_sokoban.envs.sokoban_env import g
 
 # ================================================================
 class TestSokobanEnv(unittest.TestCase):
@@ -197,6 +195,17 @@ class TestSokobanEnv(unittest.TestCase):
             "",
             "The joined chars for actions [] should be ''"
         )
+
+    def test_get_best_immediate_action(self):
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=True)
+
+        self.mock_env.steps([1, 8, 5])
+        feasible_actions = self.mock_env.get_non_deadlock_feasible_actions()
+        best_action = self.mock_env.get_best_immediate_action(feasible_actions)
+        
+        self.assertEqual(best_action, 3, "Best action should be 3 (L).")
+
+
 
 
 RANDOM_SEED = 0

@@ -190,3 +190,11 @@ class MctsSokobanEnv(SokobanEnv):
     def get_return(self, state=None, step_idx=None):
         #print(f"get_return() called! total_reward={self.total_reward}")
         return self.total_reward
+
+    def get_best_immediate_action(self, feasible_actions):
+        rewards = []
+        for action in feasible_actions:
+            env_copy = deepcopy(self)
+            _, reward, _, _ = env_copy.step(action)
+            rewards.append(reward)
+        return feasible_actions[np.argmax(rewards)]
