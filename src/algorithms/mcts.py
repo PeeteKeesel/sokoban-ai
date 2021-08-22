@@ -395,6 +395,13 @@ class MctsNode:
                           probability (1-EPS) the action that maximizes the
                           the reward of the resulting state with probability.
 
+        Args:
+            max_depth (int): Maximal depth of the simulation tree. Describes
+                             how many steps a simulation should maximaly take.
+
+            sim_policy (str): The simulation policy. Describes how actions will
+                              be chosen during the simulation.
+
         Returns:
             (float): Total reward achieved by the simulation.
         """
@@ -424,10 +431,6 @@ class MctsNode:
             # Update the total reward.
             tot_reward_of_simulation += reward_last
 
-            # print(
-            #     15 * " " + f"PICKED action {leaf.Env.print_actions_as_chars([random_action])} "
-            #                f" out of possible={non_deads}  "
-            #                f" after = {leaf.Env.print_actions_as_chars(simulation_act_traj)}  and received={reward_last}")
         print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(simulation_act_traj)}'\n" +\
               15*" " + f"received total_reward= {tot_reward_of_simulation}")
 
@@ -475,7 +478,13 @@ class MctsNode:
         """
         Backpropagation step of the SP-MCTS. The total reward obtained during
         the Simulation step is backpropagated through the tree, starting from
-        the leaf node up to the root node {@up_to}."""
+        the leaf node up to the root node {@up_to}.
+
+        Args:
+            value (float): The value to be backpropagated to the prev nodes.
+
+            up_to (MctsNode): The node to which the value should be updated.
+        """
         if self.is_expanded: 
             self.revert_visits(up_to=up_to)
             return 
@@ -756,6 +765,12 @@ class Mcts:
 
 
     def monte_carlo_tree_search(self):
+        """
+        Performs a single Monte-Carlo-Tree-Search iteration. Thus, it selects
+        from the current node until a leaf node using a selection policy. From
+        that leaf it performs a simulation using a simulation policy and
+        backpropagates the achieved value to the root node.
+        """
 
         count, leaf_node = 0, None
         while count < self.root.n_actions and leaf_node is None:
@@ -878,6 +893,20 @@ class Mcts:
         del self.root.parent.children
 
     def take_best_action(self):
+        """
+        Performs multile Monte-Carlo-Tree-Search iterations after which it
+        chooses and takes the best action and returns the corresponding
+        information.
+
+        Returns:
+            observation (object): An env-specific object representing the
+                                  observation of the environment.
+            reward (float): The amount of reward achieved by the previous step.
+            done (bool): Whether the game is finished or not.
+            info (dict): Diagnostic information useful for debugging.
+            best_action (int): The best action which was taken according to the
+                               MCTS.
+        """
         print("take_best_action() called!")
         env_state = self.Env.get_current_state()
         best_action = self.mcts(env_state)
