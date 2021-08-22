@@ -174,7 +174,7 @@ def mcts_solve(args):
         now = time()
         if now - start_time > time_limit:
             print(f"Time limit of {args.time_limit} reached.")
-            # break
+            break
 
         # Run the Monte-Carlo-Tree-Search for the current state and take the
         # best action after all simulations were performed.
@@ -194,58 +194,6 @@ def mcts_solve(args):
             break
 
     mcts.root.print_tree()
-
-    # while True:
-    #     now = time()
-
-
-    # # Must run this once at the start, so that noise injection actually affects
-    # # the first action of the episode.
-    # firstNode = mcts.root.select_and_expand()
-    # firstNode.backpropagate(0, mcts.root)
-    #
-    # # print(20*"#"+"\n" + mcts.root.print_tree() + "\n"+20*"#\n")
-    # mcts.root.print_tree()
-    #
-    # rollouts = 1
-    # while rollouts <= mcts.max_rollouts:
-    #     print(f"\n\n--- Rollout {rollouts}")
-    #     # the # of times the node was visited
-    #     prevSimulations = mcts.root.N
-    #
-    #     # We want `num_simulations` simulations per action not counting
-    #     # simulations from previous actions.
-    #     while mcts.root.N < prevSimulations + numSimulations:
-    #         print(30 * "**" + f" {mcts.root.N} < {prevSimulations} + {numSimulations} " + 30 * "**")
-    #         mcts.tree_search_random(num_simulations=numSimulations)
-    #
-    #     print(f" {mcts.root.N} > {prevSimulations} + {numSimulations} ")
-    #     print("_" * 75 + f" After {mcts.root.N - prevSimulations} simulations performed for the current node.")
-    #     mcts.root.print_tree()
-    #     print("_" * 100)
-    #
-    #     action = mcts.pick_action()
-    #     print(
-    #         f"    picked action {action}={Env.get_action_lookup_chars(action)} after action_traj={mcts.root.Env.print_actions_as_chars(mcts.root.action_traj)}")
-    #     assert action != 0
-    #     mcts.take_action(action)
-    #     print(f"        reward={mcts.rewards}")
-    #
-    #     rollouts += 1
-    #
-    #     if mcts.root.Env._check_if_all_boxes_on_target():
-    #         print(
-    #             f"After rollout {rollouts} and traj={mcts.root.Env.print_actions_as_chars(mcts.root.action_traj)} ALL BOXES ARE ON TARGET!")
-    #         break
-    #
-    #     # if mcts.root.game_is_done():
-    #     #     print("++"*1000)
-    #     #     print(f"IF MCTS.ROOT.IS_DONE() after {prevSimulations} simulations with action_traj = {mcts.root.Env.print_actions_as_chars(mcts.root.action_traj)}")
-    #     #     print("++" * 1000)
-    #     #     break
-    #
-    # print(100 * "_" + f"\n{rollouts} Rollouts performed.")
-    # mcts.root.print_tree()
 
 
 if __name__ == "__main__":
