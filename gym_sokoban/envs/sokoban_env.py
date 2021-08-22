@@ -240,9 +240,7 @@ class SokobanEnv(gym.Env):
         # Add the reward if a box is pushed on the target and
         # give a penalty if a box is pushed off the target.
         if current_boxes_on_target > self.no_boxes_on_target:
-            print(50*"---")
             self.reward_last += self.reward_box_on_target
-            print(self.reward_last)
         elif current_boxes_on_target < self.no_boxes_on_target:
             self.reward_last += self.penalty_box_off_target
         

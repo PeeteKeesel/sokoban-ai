@@ -24,9 +24,6 @@ C = 1
 SIMULATION_POLICIES = {"random": "random",
                        "eps-greedy": "eps-greedy"}
 
-# Transposition table which holds states which have already been expanded.
-TRANSPOSITION_TABLE = {}
-
 class DummyNodeAboveRoot:
 
     def __init__(self):
@@ -211,7 +208,7 @@ class MctsNode:
             if not current.is_expanded:
                 break
 
-            feasible_actions = current.Env.get_feasible_actions(TRANSPOSITION_TABLE)
+            feasible_actions = current.Env.get_feasible_actions()
 
             # Current node is not fully expanded. Expend one random action.
             if len(current.children) < len(feasible_actions):
@@ -355,15 +352,15 @@ class MctsNode:
         leaf = deepcopy(self)
 
         # Perform a rollout.
-        tot_reward_of_simulation, act_traj, depth = 0, [], 0
+        tot_reward_of_simulation, simulation_act_traj, depth = 0, [], 0
         while not leaf.game_is_done() and depth < max_depth:
             # Get a list of all feasible actions, excluding redundant and
             # deadlock actions.
-            non_deads = leaf.Env.get_non_deadlock_feasible_actions()  # TODO: can be removed
+            #non_deads = leaf.Env.get_non_deadlock_feasible_actions()  # TODO: can be removed
             random_action = np.random.choice(
                 leaf.Env.get_non_deadlock_feasible_actions()
             )
-            act_traj.append(random_action)
+            simulation_act_traj.append(random_action)
 
             # Make a random step in the environment.
             _, reward_last, done, _ = leaf.Env.step(random_action)
@@ -372,12 +369,14 @@ class MctsNode:
             # Update the total reward.
             tot_reward_of_simulation += reward_last
 
-            print(
-                15 * " " + f"PICKED action {leaf.Env.print_actions_as_chars([random_action])} "
-                           f" out of possible={non_deads}  "
-                           f" after = {leaf.Env.print_actions_as_chars(act_traj)}  and received={reward_last}")
+            # print(
+            #     15 * " " + f"PICKED action {leaf.Env.print_actions_as_chars([random_action])} "
+            #                f" out of possible={non_deads}  "
+            #                f" after = {leaf.Env.print_actions_as_chars(simulation_act_traj)}  and received={reward_last}")
+        print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(simulation_act_traj)}'\n" +\
+              15*" " + f"received total_reward= {tot_reward_of_simulation}")
 
-        return tot_reward_of_simulation
+        return tot_reward_of_simulation - leaf.Env.manhattan_heuristic()
 
 
 
@@ -704,46 +703,50 @@ class Mcts:
 
     def monte_carlo_tree_search(self):
 
-        count, child_node = 0, None
-        while count < self.root.n_actions and child_node is None:
+        count, leaf_node = 0, None
+        while count < self.root.n_actions and leaf_node is None:
 
             # 1. Selection step + 2. Expansion step of the SP-MCTS. Starting
             # from root select until a leaf node is encountered using the
             # SP-UCT formula.
-            child_node = self.root.select_and_expand()
+            leaf_node = self.root.select_and_expand()
 
             # Ignore non-changed room states and dont append them.
-            if np.alltrue(child_node.room_state == self.root.room_state):
+            if np.alltrue(leaf_node.room_state == self.root.room_state):
                 count += 1
                 child_node = None
                 continue
 
             # If we encounter done-state We can backup the value right away.
-            if child_node.game_is_done():
-                value = child_node.Env.get_return()
-                child_node.backup_value(value, up_to=self.root)
+            if leaf_node.game_is_done():
+                value = leaf_node.Env.get_return()
+                leaf_node.backup_value(value, up_to=self.root)
                 return
-        print(f"child_node after {self.Env.print_actions_as_chars(child_node.action_traj)} =\n"
-              f"{child_node.Env.render_colored()}")
+        print(f"leaf_node after {self.Env.print_actions_as_chars(leaf_node.action_traj)}")
+        leaf_node.Env.render_colored()
 
         # Evaluate the child node and backup the value estimate.
-        if child_node:
+        if leaf_node:
+            if leaf_node.depth == self.max_depth:
+                print(f"MAX_DEPTH {leaf_node.depth} REACHED, reward={leaf_node.W} parent_reward={leaf_node.parent.W}")
+                raise NotImplementedError
+
             if self.simulation_policy == SIMULATION_POLICIES["random"]:
                 # 3. Simulation step of the SP-MCTS. Simulate using random
                 # actions until the game is done, which can be either by
                 # finishing the game or by reaching the max no. of steps.
-                tot_reward = child_node.perform_simulation(self.max_depth)
+                tot_reward = leaf_node.perform_simulation(self.max_depth)
 
                 # Update the total value for the current leaf node.
-                child_node.parent.child_W[child_node.prev_action] = tot_reward
+                leaf_node.parent.child_W[leaf_node.prev_action] = tot_reward
 
                 # 4. Backpropagatiom step of the SP-MCTS.
-                child_node.backpropagate(value=tot_reward, up_to=self.root)
+                leaf_node.backpropagate(value=tot_reward, up_to=self.root)
 
                 return
             else:
                 raise NotImplementedError("ERROR: Simulation policies other than 'random' not implemented yet.")
-        raise Exception(f"ERROR: No child node found for {self.root.room_state}")
+        raise Exception(f"ERROR: No leaf node found for {self.root.room_state}")
 
 
     def pick_action(self):

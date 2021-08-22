@@ -10,8 +10,8 @@ from time import time, sleep
 sys.path.append('my/path/to/module/folder')
 
 
-RANDOM_SEED = 0
-DIM_ROOM = 8
+RANDOM_SEED = 10
+DIM_ROOM = 7
 NUM_BOXES = 2
 
 # ================================================================
@@ -183,11 +183,17 @@ def mcts_solve(args):
         a_traj.append(best_action)
 
         if done:
-            print("MAIN: is done")
+            print(f"DONE: Solution found!\n"
+                  f"      trajectory  : {mcts.Env.print_actions_as_chars(a_traj)}\n"
+                  f"      total reward: {reward}")
+            break
+        elif len(a_traj) >= args.max_steps:
+            print(f"DONE: Maximal number of steps {args.max_steps} reached!\n"
+                  f"      trajectory  : {mcts.Env.print_actions_as_chars(a_traj)}\n"
+                  f"      total reward: {reward}")
             break
 
     mcts.root.print_tree()
-    print(a_traj)
 
     # while True:
     #     now = time()
@@ -252,9 +258,9 @@ if __name__ == "__main__":
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=200,
+    parser.add_argument("--max_rollouts", type=np.int, default=1000,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=20,
+    parser.add_argument("--max_depth", type=np.int, default=5,
                         help="Depth of each rollout")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")

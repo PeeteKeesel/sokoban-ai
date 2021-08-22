@@ -198,8 +198,4 @@ class TestMctsNode(unittest.TestCase):
     def test_maybe_add_child_transposition_tables(self):
         self.setUp(render_board=True)
 
-
-        self.mock_env.step(1)
-
-
         pass
