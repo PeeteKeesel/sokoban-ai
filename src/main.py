@@ -1,11 +1,9 @@
 import argparse
 import sys
 
-from gym_sokoban.envs.mcts_sokoban_env import MctsSokobanEnv
-from algorithms.mcts import execute_episode, Mcts
-from gym_sokoban.envs.room_utils import *
+from algorithms.mcts import Mcts
 from gym_sokoban.envs.sokoban_env import *
-from time import time, sleep
+from time import time
 
 sys.path.append('my/path/to/module/folder')
 
@@ -206,10 +204,10 @@ if __name__ == "__main__":
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=1000,
+    parser.add_argument("--max_rollouts", type=np.int, default=100,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=5,
-                        help="Depth of each rollout")
+    parser.add_argument("--max_depth", type=np.int, default=30,
+                        help="Depth of each rollout (simulation)")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")
     parser.add_argument("--num_parallel", type=np.int, default=8,

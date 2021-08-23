@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from gym.utils           import seeding
 from gym.spaces.discrete import Discrete
 from gym.spaces          import Box

@@ -55,15 +55,12 @@ class MctsNode:
             self.depth = 0
             parent = DummyNodeAboveRoot()
             self.action_traj = []
-            self.Env.action_trajectory = self.action_traj.copy()  # TODO: can be removed
         else:
             self.depth = parent.depth + 1
             if prev_action:
                 self.action_traj = parent.action_traj + [prev_action]
-                self.Env.action_trajectory = self.action_traj.copy() # TODO: can be removed
             else:
                 self.action_traj = []
-                self.Env.action_trajectory = self.action_traj.copy()  # TODO: can be removed
         self.parent      = parent
         self.room_state  = self.Env.get_room_state()
         self.n_actions   = n_actions  # Number of actions from the node
@@ -102,7 +99,6 @@ class MctsNode:
         """
         return self.child_Q + self.child_U
 
-    # NEW
     @property
     def sp_uct(self):
         """
@@ -218,7 +214,7 @@ class MctsNode:
             if not current.is_expanded:
                 break
 
-            feasible_actions = current.Env.get_feasible_actions()
+            feasible_actions = current.Env.get_non_deadlock_feasible_actions()
 
             # Current node is not fully expanded. Expend one random action.
             if len(current.children) < len(feasible_actions):
@@ -449,7 +445,7 @@ class MctsNode:
         print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(simulation_act_traj)}'\n" +\
               15*" " + f"received total_reward= {tot_reward_of_simulation}")
 
-        return tot_reward_of_simulation - leaf.Env.manhattan_heuristic()
+        return tot_reward_of_simulation #- leaf.Env.manhattan_heuristic()
 
 
     def incorporate_nn_estimates(self, action_probs, value, up_to):
