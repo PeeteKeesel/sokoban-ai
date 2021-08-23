@@ -1,18 +1,10 @@
-import random
 import numpy as np
 
-from gym_sokoban.envs import MctsSokobanEnv
-from tests.testing_environment     import unittest
-from src.algorithms.mcts import Mcts, MctsNode, execute_episode
+from tests.setUpEnv import SetUpEnv
+from src.algorithms.mcts import execute_episode
+
 
 RANDOM_SEED = 0
-INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
-                                [0, 1, 1, 1, 1, 0],
-                                [0, 0, 2, 1, 1, 0],
-                                [0, 0, 0, 4, 1, 0],
-                                [0, 0, 0, 5, 1, 0],
-                                [0, 0, 0, 0, 0, 0]])
-
 DIM_ROOM = (6, 6)
 NUM_BOXES = 1
 MAX_STEPS = 3
@@ -21,39 +13,26 @@ MAX_ROLLOUTS = 10
 SIMULATION_POLICY = "random"
 NUM_PARALLEL = 8
 
-# ================================================================
-class TestMcts(unittest.TestCase):
 
-    def setUp(self, dim_room=DIM_ROOM, num_boxes=NUM_BOXES, max_steps=MAX_STEPS,
-              max_depth=MAX_DEPTH, max_rollouts=MAX_ROLLOUTS,
-              simulation_policy=SIMULATION_POLICY, num_parallel=NUM_PARALLEL,
-              render_board=False, print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = MctsSokobanEnv(
-                dim_room=dim_room,
-                max_steps=max_steps,
-                num_boxes=num_boxes
+class TestMcts(SetUpEnv):
+    """
+    Tests functionality of Mcts.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setUp(
+            dim_room=DIM_ROOM,
+            num_boxes=NUM_BOXES,
+            max_steps=MAX_STEPS,
+            max_depth=MAX_DEPTH,
+            max_rollouts=MAX_ROLLOUTS,
+            simulation_policy=SIMULATION_POLICY,
+            num_parallel=NUM_PARALLEL,
+            random_seed=RANDOM_SEED,
+            render_board=False,
+            print_board=False
         )
-
-        self.mcts = Mcts(
-                Env=self.mock_env,
-                simulation_policy=SIMULATION_POLICY,
-                max_rollouts=MAX_ROLLOUTS,
-                max_depth=MAX_DEPTH,
-                num_parallel=NUM_PARALLEL
-        )
-
-        self.mock_env.seed(random_seed)
-        np.random.seed(random_seed)
-        random.seed(random_seed)
-        self.mock_env.action_space.seed(random_seed)
-        self.mock_env.reset()
-
-        if print_board:
-            print(f"\n---\nroom of size {dim_room} with {num_boxes} boxes and random_seed={random_seed}")
-            print(self.mock_env.room_state)
-
-        if render_board:
-            self.mock_env.render_colored()
 
     def test_sp_uct(self):
         self.setUp()

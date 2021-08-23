@@ -33,11 +33,11 @@ class SokobanEnv(gym.Env):
         self.no_boxes_on_target = 0
 
         # Penalties and Rewards
-        self.penalty_for_step       = -0.1 # Neg. reward for making a step
-        self.penalty_box_off_target = -1   # Neg. reward for pushing box from target
-        self.reward_box_on_target   = 10    # Reward for pushing a box on a target
-        self.reward_finished        = 100   # Reward for finishing the game
-        self.reward_last            = 0    # Reward achieved by the previous step
+        self.penalty_for_step       = -0.1 # reward for making a step
+        self.penalty_box_off_target = -1   # reward for pushing box from target
+        self.reward_box_on_target   = 10   # reward for pushing a box on a target
+        self.reward_finished        = 100  # reward for finishing the game
+        self.reward_last            = 0    # reward achieved by the previous step
 
         # Other reward types: see 4.2 MCTS configuration
         # self.reward_r0 = 1 if self._check_if_done() else 0

@@ -1,18 +1,10 @@
-import random
 import numpy as np
 
-from gym_sokoban.envs import MctsSokobanEnv
-from tests.testing_environment import unittest
-from src.algorithms.mcts import MctsNode, Mcts
+from tests.setUpEnv import SetUpEnv
+from src.algorithms.mcts import MctsNode
+
 
 RANDOM_SEED = 0
-INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
-                                [0, 1, 1, 1, 1, 0],
-                                [0, 0, 2, 1, 1, 0],
-                                [0, 0, 0, 4, 1, 0],
-                                [0, 0, 0, 5, 1, 0],
-                                [0, 0, 0, 0, 0, 0]])
-
 DIM_ROOM = (6, 6)
 NUM_BOXES = 1
 MAX_STEPS = 3
@@ -20,34 +12,33 @@ MAX_DEPTH = 10
 MAX_ROLLOUTS = 10
 SIMULATION_POLICY = "random"
 NUM_PARALLEL = 8
+INITIAL_ROOM_6x6_1 = np.array([[0, 0, 0, 0, 0, 0],
+                               [0, 1, 1, 1, 1, 0],
+                               [0, 0, 2, 1, 1, 0],
+                               [0, 0, 0, 4, 1, 0],
+                               [0, 0, 0, 5, 1, 0],
+                               [0, 0, 0, 0, 0, 0]])
 
-# ================================================================
-class TestMctsNode(unittest.TestCase):
 
-    def setUp(self, dim_room=DIM_ROOM, num_boxes=NUM_BOXES, max_steps=MAX_STEPS,
-              max_depth=MAX_DEPTH, max_rollouts=MAX_ROLLOUTS,
-              simulation_policy=SIMULATION_POLICY, num_parallel=NUM_PARALLEL,
-              render_board=False, print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = MctsSokobanEnv(
-                dim_room=DIM_ROOM,
-                num_boxes=NUM_BOXES,
-                max_steps=MAX_STEPS
+class TestMctsNode(SetUpEnv):
+    """
+    Tests functionality of MctsNode.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setUp(
+            dim_room=DIM_ROOM,
+            num_boxes=NUM_BOXES,
+            max_steps=MAX_STEPS,
+            max_depth=MAX_DEPTH,
+            max_rollouts=MAX_ROLLOUTS,
+            simulation_policy=SIMULATION_POLICY,
+            num_parallel=NUM_PARALLEL,
+            random_seed=RANDOM_SEED,
+            render_board=False,
+            print_board=False
         )
-
-        self.mcts_node = MctsNode(self.mock_env, self.mock_env.get_n_actions())
-
-        self.mock_env.seed(RANDOM_SEED)
-        np.random.seed(RANDOM_SEED)
-        random.seed(RANDOM_SEED)
-        self.mock_env.action_space.seed(RANDOM_SEED)
-        self.mock_env.reset()
-
-        if print_board:
-            print(f"\n---\nroom of size {dim_room} with {num_boxes} boxes and random_seed={random_seed}")
-            print(self.mock_env.get_room_state())
-
-        if render_board:
-            self.mock_env.render_colored()
 
     def test_constructor(self):
         print("test_constructor()")
@@ -121,13 +112,13 @@ class TestMctsNode(unittest.TestCase):
 
     def test_select_until_leaf(self):
         print("test_select_until_leaf()")
-        self.setUp(render_board=True)
+        self.setUp(render_board=False)
 
         root = MctsNode(self.mock_env, self.mock_env.get_n_actions())
         child_after_1 = root.maybe_add_child(1)
-        after_2 = root.maybe_add_child(2)
-        after_6 = root.maybe_add_child(6)
-        after_7 = root.maybe_add_child(7)
+        root.maybe_add_child(2)
+        root.maybe_add_child(6)
+        root.maybe_add_child(7)
         child_after_8 = root.maybe_add_child(8)
 
         root.child_P = np.array(
@@ -138,7 +129,7 @@ class TestMctsNode(unittest.TestCase):
         root.is_expanded = True
 
         # Go the trajectory [U, r, u, L] and [U, U]
-        child_after_11 =  child_after_1.maybe_add_child(1)
+        child_after_1.maybe_add_child(1)
         child_after_1.is_expanded = True
         child_after_1.child_P = np.array(
             [0.00, 0.2, 0.01, 0.01, 0.02, 0.00, 0.00, 0.02, 0.32],
@@ -152,23 +143,22 @@ class TestMctsNode(unittest.TestCase):
             dtype=np.float32)
 
         # Should be a terminal state.
-        child_after_1813 = child_after_185.maybe_add_child(3)
+        child_after_185.maybe_add_child(3)
         child_after_185.is_expanded = True
         child_after_185.child_P = np.array(
             [0.00, 0.02, 0.01, 0.61, 0.02, 0.61, 0.00, 0.00, 0.02],
             dtype=np.float32)
 
         # Go the trajectory [r, u] and [r, D]
-        child_after_82 = child_after_8.maybe_add_child(2)
+        child_after_8.maybe_add_child(2)
         child_after_8.is_expanded = True
-        child_after_85 = child_after_8.maybe_add_child(5)
-
-        root.print_tree()
+        child_after_8.maybe_add_child(5)
 
         leaf = root.select_until_leaf()
-        leaf.Env.render_colored()
 
-        # root.print_tree()
+        if self.render_board:
+            root.print_tree()
+            leaf.Env.render_colored()
 
     def test_print_tree(self):
         print("test_print_tree()")
@@ -186,7 +176,8 @@ class TestMctsNode(unittest.TestCase):
 
         child_after_8.maybe_add_child(5)
 
-        root.print_tree()
+        if self.render_board:
+            root.print_tree()
 
     def test_execute_episode(self):
         print("test_execute_episode()")

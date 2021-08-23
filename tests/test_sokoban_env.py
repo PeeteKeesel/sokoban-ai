@@ -1,30 +1,47 @@
-import random
 import numpy as np
 
-from gym_sokoban.envs import MctsSokobanEnv
-from tests.testing_environment import unittest
+from tests.setUpEnv import SetUpEnv
 from utils import manhattan_distance
 
-# ================================================================
-class TestSokobanEnv(unittest.TestCase):
 
-    def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False, render_board=False):
-        self.mock_env = MctsSokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
+RANDOM_SEED = 0
+DIM_ROOM = (6, 6)
+NUM_BOXES = 1
+MAX_STEPS = 3
+MAX_DEPTH = 10
+MAX_ROLLOUTS = 10
+SIMULATION_POLICY = "random"
+NUM_PARALLEL = 8
+INITIAL_ROOM_STATE = np.array([[0, 0, 0, 0, 0, 0],
+                               [0, 1, 1, 1, 1, 0],
+                               [0, 0, 2, 1, 1, 0],
+                               [0, 0, 0, 4, 1, 0],
+                               [0, 0, 0, 5, 1, 0],
+                               [0, 0, 0, 0, 0, 0]])
 
-        self.mock_env.seed(RANDOM_SEED)
-        np.random.seed(RANDOM_SEED)
-        random.seed(RANDOM_SEED)
-        self.mock_env.action_space.seed(RANDOM_SEED)
-        self.mock_env.reset()
 
-        if print_board:
-            print(self.mock_env.room_state)
+class TestSokobanEnv(SetUpEnv):
+    """
+    Tests functionality of SokobanEnv and MctsSokobanEnv.
+    """
 
-        if render_board:
-            self.mock_env.render_colored()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setUp(
+            dim_room=DIM_ROOM,
+            num_boxes=NUM_BOXES,
+            max_steps=MAX_STEPS,
+            max_depth=MAX_DEPTH,
+            max_rollouts=MAX_ROLLOUTS,
+            simulation_policy=SIMULATION_POLICY,
+            num_parallel=NUM_PARALLEL,
+            random_seed=RANDOM_SEED,
+            render_board=False,
+            print_board=False
+        )
 
     def test_state_after_action(self):
-        self.setUp(dim_room=(6, 6), num_boxes=1, print_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
         self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
 
@@ -75,7 +92,7 @@ class TestSokobanEnv(unittest.TestCase):
         self.assertTrue(np.alltrue(expected_state_after_action == self.mock_env.state_after_action(8)['new_state']))
 
     def test_get_children(self):
-        self.setUp(dim_room=(6, 6), num_boxes=1, print_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
         self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
 
@@ -97,36 +114,43 @@ class TestSokobanEnv(unittest.TestCase):
         children_actual   = self.mock_env.get_children()
 
         children_not_None = [child for child in children_actual if child is not None]
-        self.assertEqual(2,
-                         len(children_not_None),
-                         "length of elements which are not None should be 2.")
+        self.assertEqual(
+            2,
+            len(children_not_None),
+            "length of elements which are not None should be 2."
+        )
         self.assertTrue(np.array_equal(children_expected, children_not_None))
 
     def test_manhattan_distance(self):
-        self.setUp()
+        self.setUp(dim_room=(6, 6), num_boxes=3, render_board=False)
 
         manh_dist_expect = 4
         manh_dist_actual = manhattan_distance(np.array([2, 3]), (5, 4))
 
-        self.assertEqual(manh_dist_expect,
-                         manh_dist_actual,
-                         f"Manhattan distance between [2, 3] and [5, 4] should be {manh_dist_expect} but is {manh_dist_actual}")
+        self.assertEqual(
+            manh_dist_expect,
+            manh_dist_actual,
+            f"Manhattan distance between [2, 3] and [5, 4] should be {manh_dist_expect} but is {manh_dist_actual}"
+        )
 
         self.assertRaises(AssertionError,
                           manhattan_distance, np.array([2, 3, 4]), (5, 4))
 
     def test_manhattan_heuristic(self):
-        self.setUp(print_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=3, render_board=False)
+
 
         manh_heur_expect = 1 + (1 + 1 + 2)
         manh_heur_actual = self.mock_env.manhattan_heuristic()
 
-        self.assertEqual(manh_heur_expect,
-                         manh_heur_actual,
-                         f"Manhattan heuristic should be {manh_heur_expect} but is {manh_heur_actual} for \n{self.mock_env.room_state}")
+        self.assertEqual(
+            manh_heur_expect,
+            manh_heur_actual,
+            f"Manhattan heuristic should be {manh_heur_expect} but is {manh_heur_actual} for \n{self.mock_env.room_state}"
+        )
 
     def test_in_corner(self):
-        self.setUp(num_boxes=1, render_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
         self.assertFalse(self.mock_env._in_corner())
 
@@ -135,22 +159,23 @@ class TestSokobanEnv(unittest.TestCase):
         self.assertTrue(self.mock_env._in_corner())
 
         # 2nd example
-        self.setUp(num_boxes=1, render_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
         self.mock_env.steps([1, 1, 7, 5, 4])
         self.assertTrue(self.mock_env._in_corner())
 
         # 3rd example
-        self.setUp(num_boxes=1, render_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
         self.mock_env.steps([1, 1, 8, 5, 3, 3])
         self.assertTrue(self.mock_env._in_corner())
 
         # 4th example: 3 walls around the box.
-        self.setUp(dim_room=(8, 8), num_boxes=2, render_board=True)
+        self.setUp(dim_room=(8, 8), num_boxes=2, render_board=False)
+
         self.mock_env.steps([2, 8, 6, 6, 7, 3, 5, 4, 4])
         self.assertTrue(self.mock_env._in_corner())
 
     def test_deadlock_detection(self):
-        self.setUp(num_boxes=1, render_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
         # Test corner deadlock.
         self.mock_env.steps([8, 5, 5, 7])
@@ -158,7 +183,7 @@ class TestSokobanEnv(unittest.TestCase):
                         f"The room state after taking action 2 should be a deadlock.")
 
         # Test corner deadlock with 3 walls around the box.
-        self.setUp(dim_room=(8, 8), num_boxes=2, render_board=True)
+        self.setUp(dim_room=(8, 8), num_boxes=2, render_board=False)
         self.mock_env.steps([2, 8, 6, 6, 7, 3, 5, 4])
         self.assertTrue(self.mock_env.deadlock_detection(actionToTake=4),
                         f"The room state after taking action 2 should be a deadlock.")
@@ -166,20 +191,21 @@ class TestSokobanEnv(unittest.TestCase):
         # TODO: test other deadlocks e.g. simple deadlocks
 
 
-    ##############################################################################
-    # Test static-methods                                                        #
-    ##############################################################################
+    ###########################################################################
+    # static-methods                                                          #
+    ###########################################################################
     def test_get_actions_lookup_chars(self):
-        self.setUp()
         self.assertEqual(
             self.mock_env.get_actions_lookup_chars([2, 3, 4, 5]),
             ["D", "L", "R", "u"],
-            "The chars for actions [2,3,4,5] should be ['D', 'L', 'R', 'u]''")
+            "The chars for actions [2,3,4,5] should be ['D', 'L', 'R', 'u]''"
+        )
 
         self.assertRaises(
             AssertionError,
             self.mock_env.get_actions_lookup_chars,
-            [2, 3, 9, 5])
+            [2, 3, 9, 5]
+        )
 
     def test_print_actions_as_chars(self):
         self.setUp()
@@ -197,21 +223,10 @@ class TestSokobanEnv(unittest.TestCase):
         )
 
     def test_get_best_immediate_action(self):
-        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=True)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
         self.mock_env.steps([1, 8, 5])
         feasible_actions = self.mock_env.get_non_deadlock_feasible_actions()
         best_action = self.mock_env.get_best_immediate_action(feasible_actions)
         
         self.assertEqual(best_action, 3, "Best action should be 3 (L).")
-
-
-
-
-RANDOM_SEED = 0
-INITIAL_ROOM_STATE = np.array([[0, 0, 0, 0, 0, 0],
-                               [0, 1, 1, 1, 1, 0],
-                               [0, 0, 2, 1, 1, 0],
-                               [0, 0, 0, 4, 1, 0],
-                               [0, 0, 0, 5, 1, 0],
-                               [0, 0, 0, 0, 0, 0]])
