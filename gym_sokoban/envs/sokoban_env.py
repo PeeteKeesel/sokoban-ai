@@ -42,8 +42,8 @@ class SokobanEnv(gym.Env):
         # Other reward types: see 4.2 MCTS configuration
         # self.reward_r0 = 1 if self._check_if_done() else 0
 
-        # TODO: or make this 'return' = discounted reward
-        self.total_reward = 0
+        # The total discounted reward until the current state.
+        self.total_return = 0
 
         self.action_trajectory = []
 
@@ -115,11 +115,6 @@ class SokobanEnv(gym.Env):
             moved_player = self._move(action)
 
         self._calc_reward()
-
-        # NEW
-        #print("=============== step() called ====================")
-        self.update_total_reward()
-        #print(f"self.total_reward={self.total_reward}")
         
         done = self._check_if_done()
 
@@ -132,19 +127,29 @@ class SokobanEnv(gym.Env):
             "action.moved_box": moved_box,
         }
 
-        self.action_trajectory.append(ACTION_LOOKUP_CHARS[action])
-
         if done:
             info["maxsteps_used"] = self._check_if_maxsteps()
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
 
         return observation, self.reward_last, done, info
 
-    # NEW
     def steps(self, actions: List[int]):
         """Apply multiple steps in the environment."""
         for a in actions:
             self.step(action=a)
+
+    # TODO: include this in mcts.py in perform_simulation and set gamma.
+    def update_total_return(self, depth, gamma):
+        """
+        Updates the total return. This should be called in every step of a
+        simulation.
+
+        Args:
+             depth (int): The current depth of the simulation.
+
+             gamma (float): The discount factor between 0 and 1.
+        """
+        self.total_return += gamma * self.reward_last
 
     def _push(self, action):
         """

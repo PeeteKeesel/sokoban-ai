@@ -7,6 +7,9 @@ import numpy as np
 
 
 class MctsSokobanEnv(SokobanEnv):
+    """
+    Extension of the SokobanEnv class containing methods specifically for MCTS.
+    """
 
     def __init__(self, dim_room, num_boxes, max_steps=100):
 
