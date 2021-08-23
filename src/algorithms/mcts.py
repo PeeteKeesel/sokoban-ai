@@ -203,8 +203,13 @@ class MctsNode:
             current = current.maybe_add_child(max_action)
         return current
 
-    # NEW
     def select_and_expand(self):
+        """
+        Performs the Selection and Expansion step of SP-MCTS. In the Selection
+        step the action which maximizes the SP-UCT formula is selected. If it
+        was not already done before the node for that action will be added as a
+        new child node to the current one.
+        """
         current = self
         while True:
             current.N += 1
@@ -230,17 +235,27 @@ class MctsNode:
                     rdm_action = np.random.choice(feasible_actions)
                     current = current.maybe_add_child(rdm_action)
                 else:
+                    # sp_uct at the indices where feasible action indexes are.
                     max_action_idx = np.argmax(current.sp_uct[feasible_actions])
                     max_action = feasible_actions[max_action_idx]
-                    # sp_uct at the indices where feasible action indexes are
                     current = current.maybe_add_child(max_action)
 
         return current
 
 
-    def expand(self, feasible_actions):
-        untried_actions = set(feasible_actions) - set([child for child in self.children])
-        random_action   = np.random.choice(tuple(untried_actions))
+    def expand(self, actions):
+        """
+        Expands the current tree by adding a child node randomly from the set
+        of child nodes which have not yet been visited.
+
+        Args:
+            actions (List[int]): A set of feasible actions.
+
+        Returns:
+            (MctsNode): The expanded MctsNode object.
+        """
+        untried_actions = set(actions) - set([child for child in self.children])
+        random_action = np.random.choice(tuple(untried_actions))
         return self.maybe_add_child(random_action)
 
     # NEW
@@ -250,8 +265,7 @@ class MctsNode:
     def maybe_add_child(self, action):
         """
         Adds child node for {@action} if it does not exist yet, and returns it.
-        Expand only nodes that represent a state that has not yet been visited
-        via transposition tables.
+        Expand only nodes that represent a state that has not yet been visited.
 
         Returns:
             child node after taking {@action}
@@ -261,7 +275,8 @@ class MctsNode:
             new_env.step(action)
             self.children[action] = MctsNode(
                 new_env, new_env.get_n_actions(),
-                prev_action=action, parent=self)
+                prev_action=action, parent=self
+            )
 
         return self.children[action]
 
@@ -385,7 +400,7 @@ class MctsNode:
 
     def perform_simulation(self, max_depth, sim_policy="random"):
         """
-        Performs the simulation step of the SP-MCTS. Starting from the current
+        Performs the Simulation step of the SP-MCTS. Starting from the current
         MctsNode which should be a leaf node, we simulate until the game is
         done, thus, either the maximal number of steps is reached or the game
         is finished. The simulation is done using a specific simulation policy:
@@ -476,9 +491,9 @@ class MctsNode:
     # NEW
     def backpropagate(self, value, up_to):
         """
-        Backpropagation step of the SP-MCTS. The total reward obtained during
-        the Simulation step is backpropagated through the tree, starting from
-        the leaf node up to the root node {@up_to}.
+        Performs the Backpropagation step of the SP-MCTS. The total reward
+        obtained during the Simulation step is backpropagated through the
+        tree, starting from the leaf node up to the root node {@up_to}.
 
         Args:
             value (float): The value to be backpropagated to the prev nodes.
@@ -921,7 +936,7 @@ class Mcts:
         mcts_copy = deepcopy(self)
 
         rollouts = 0
-        while rollouts <= self.max_rollouts:
+        while rollouts < self.max_rollouts:
             print(f"rollout = {rollouts}")
 
             mcts_copy.monte_carlo_tree_search()
