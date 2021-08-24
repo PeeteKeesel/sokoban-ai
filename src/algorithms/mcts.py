@@ -17,7 +17,7 @@ TEMP_THRESHOLD = 5
 
 # Large constant used to ensure that rarely explored nodes are
 # considered promising. Used for SP-UCT.
-D = 10 # TODO: what value to choose?
+D = 10
 C = 1
 
 # Different types of simulation/rollout policies.
@@ -49,7 +49,6 @@ class DummyNodeAboveRoot:
     def backup_value(self, value, up_to=None): pass
 
 
-# ================================================================
 class MctsNode:
 
     def __init__(self, Env, n_actions, prev_action=None, parent=None):
@@ -604,7 +603,7 @@ class MctsNode:
         for _, child in sorted(self.children.items()):
             child.print_tree(depth+1)
 
-# ================================================================
+
 class Mcts:
     """
     Represents a Monte-Carlo search tree and contains methods for

@@ -1,6 +1,6 @@
 import numpy as np
 
-from tests.setUpEnv import SetUpEnv
+from tests.set_up_env import SetUpEnv
 from utils import manhattan_distance
 
 
