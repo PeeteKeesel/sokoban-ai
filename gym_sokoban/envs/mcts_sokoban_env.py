@@ -95,10 +95,6 @@ class MctsSokobanEnv(SokobanEnv):
         """Returns the indices of all feasible actions from the state."""
         return [index for index, value in enumerate(self.get_children()) if value is not None]
 
-
-    def get_obs_for_states(self, states):
-        return np.array(states)
-
     def print_room_state_using_format(self):
         print_room_state(convert_room_state_to_output_format(np.copy(self.room_state).astype('str')))
 
@@ -108,8 +104,8 @@ class MctsSokobanEnv(SokobanEnv):
         Higher values correspond to a larger 'distances' from the goal state.
 
         Returns:
-            (float)  - the Manhattan distance of the agent to its nearest box plus the sum of all Manhatten distances
-                       of each box to its nearest goal state.
+            (float): The Manhattan distance of the agent to its nearest box plus the sum of all Manhatten distances
+                     of each box to its nearest goal state.
         """
         boxes_not_on_target = set(tuple(box) for box in np.argwhere(self.room_state == 4))
         box_target_states   = set(tuple(box) for box in np.argwhere(self.room_state == 2))
@@ -127,13 +123,6 @@ class MctsSokobanEnv(SokobanEnv):
         return min_dist_player_box + sum_min_dist_boxes_target
 
     def is_deadlock(self):
-        # temp_room_structure = self.room_state.copy()
-        # temp_room_structure[temp_room_structure == 5] = 1
-        # a, b, c = reverse_move(self.room_state, temp_room_structure,
-        #                        self.box_mapping, self.new_box_position, 1)
-        # print(self.room_state)
-        # print(f"a={a}\n b={b}\n c={c}")
-
         if self.new_box_position is not None and \
             self.new_box_position not in self.box_mapping and \
             self._in_corner():
@@ -145,7 +134,7 @@ class MctsSokobanEnv(SokobanEnv):
         Checks if the the state after a taking a given action is a deadlock
         state.
 
-        Arguments:
+        Args:
             actionToTake: int - The action to take from the current state.
         Returns:
             Returns True if the state after {@actionToTake} was taken is a
@@ -186,12 +175,10 @@ class MctsSokobanEnv(SokobanEnv):
         return np.delete(feasible_actions, idxsToRemove)
 
     def update_total_reward(self):
-        #print(f"update_total_reward() called!   reward_last={self.reward_last}   tot_reward={self.total_reward}")
         self.total_reward += self.reward_last
 
     # TODO: implement get_return correctly
     def get_return(self, state=None, step_idx=None):
-        #print(f"get_return() called! total_reward={self.total_reward}")
         return self.total_reward
 
     def get_best_immediate_action(self, feasible_actions):
@@ -201,3 +188,7 @@ class MctsSokobanEnv(SokobanEnv):
             _, reward, _, _ = env_copy.step(action)
             rewards.append(reward)
         return feasible_actions[np.argmax(rewards)]
+
+    @staticmethod
+    def get_obs_for_states(states):
+        return np.array(states)

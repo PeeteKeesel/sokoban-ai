@@ -28,6 +28,9 @@ SIMULATION_POLICIES = {"random": "random",
 # simulation policy.
 EPS = 0.2
 
+# Discount factor for the return.
+GAMMA = 0.1
+
 
 class DummyNodeAboveRoot:
 
@@ -419,7 +422,7 @@ class MctsNode:
         leaf = deepcopy(self)
 
         # Perform a rollout.
-        tot_reward_of_simulation, simulation_act_traj, depth = 0, [], 0
+        tot_reward_of_sim, tot_return_of_sim, act_traj_sim, depth = 0, 0, [], 0
         while not leaf.game_is_done() and depth < max_depth:
             # Get a list of all feasible actions, excluding redundant and
             # deadlock actions.
@@ -433,19 +436,24 @@ class MctsNode:
                 else:
                     sim_action = leaf.Env.get_best_immediate_action(feasible_actions)
 
-            simulation_act_traj.append(sim_action)
+            act_traj_sim.append(sim_action)
 
             # Make a random step in the environment.
             _, reward_last, done, _ = leaf.Env.step(sim_action)
+
+            # Update total reward and return.
+            tot_reward_of_sim += reward_last
+            tot_return_of_sim += GAMMA**depth * reward_last
+            leaf.Env.update_total_return(depth, GAMMA)
+            assert tot_return_of_sim == leaf.Env.total_return
+
             depth += 1
 
-            # Update the total reward.
-            tot_reward_of_simulation += reward_last
+        print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(act_traj_sim)}'\n" +\
+              15*" " + f"received total_reward= {tot_reward_of_sim} and return= {tot_return_of_sim}\n" +\
+              15*" " + f"heuristic= {leaf.Env.manhattan_heuristic()}")
 
-        print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(simulation_act_traj)}'\n" +\
-              15*" " + f"received total_reward= {tot_reward_of_simulation}")
-
-        return tot_reward_of_simulation #- leaf.Env.manhattan_heuristic()
+        return tot_return_of_sim - leaf.Env.manhattan_heuristic()
 
 
     def incorporate_nn_estimates(self, action_probs, value, up_to):

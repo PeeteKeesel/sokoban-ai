@@ -149,7 +149,7 @@ class SokobanEnv(gym.Env):
 
              gamma (float): The discount factor between 0 and 1.
         """
-        self.total_return += gamma * self.reward_last
+        self.total_return += gamma**depth * self.reward_last
 
     def _push(self, action):
         """
@@ -223,11 +223,7 @@ class SokobanEnv(gym.Env):
         return False
 
     def _calc_reward(self):
-        """
-        Calculate Reward Based on
-
-        Returns:
-        """
+        """Calculates Reward for the previous step."""
         # Every step a small penalty is given.
         # This ensures that short solutions have a higher reward.
         self.reward_last = self.penalty_for_step
@@ -264,12 +260,6 @@ class SokobanEnv(gym.Env):
                              got pushed onto the targets,
                        False, otherwise.
         """
-        #print(self.num_env_steps)
-        #if self._check_if_maxsteps():
-        #    print(f">>>>>>>>   max_steps of {self.max_steps} reached.")
-        #elif self._check_if_all_boxes_on_target():
-        #    print(f">>>>>>>>   all boxes are on target. after {self.action_trajectory} <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
-        #    self.render_colored()
         return self._check_if_all_boxes_on_target() or self._check_if_maxsteps()
 
     def _check_if_all_boxes_on_target(self):
@@ -288,7 +278,6 @@ class SokobanEnv(gym.Env):
         """Checks if any of the boxes on the board is in a corner."""
         boxPositions = np.where(self.room_state == 4)
         boxPositions = list(zip(boxPositions[0], boxPositions[1]))
-        #print(f"boxPositions={boxPositions}")
 
         for boxPos in boxPositions:
             n  = (boxPos[0] - 1, boxPos[1])
@@ -403,9 +392,9 @@ class SokobanEnv(gym.Env):
     def set_maxsteps(self, num_steps):
         self.max_steps = num_steps
 
-    ##############################################################################
-    # Get-methods                                                                #
-    ##############################################################################
+    ###########################################################################
+    # Static methods                                                          #
+    ###########################################################################
 
     @staticmethod
     def get_n_actions():
