@@ -204,7 +204,7 @@ if __name__ == "__main__":
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=100,
+    parser.add_argument("--max_rollouts", type=np.int, default=500,
                         help="Number of rollouts (simulations) per move")
     parser.add_argument("--max_depth", type=np.int, default=30,
                         help="Depth of each rollout (simulation)")

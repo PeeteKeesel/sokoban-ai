@@ -33,8 +33,8 @@ class SetUpEnv(unittest.TestCase):
                  simulation_policy=SIMULATION_POLICY,
                  num_parallel=NUM_PARALLEL,
                  random_seed=RANDOM_SEED,
-                 render_board=False,
-                 print_board=False):
+                 print_board=False,
+                 render_board=False):
 
         self.dim_room = dim_room
         self.num_boxes = num_boxes

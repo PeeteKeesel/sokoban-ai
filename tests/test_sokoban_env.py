@@ -149,6 +149,12 @@ class TestSokobanEnv(SetUpEnv):
             f"Manhattan heuristic should be {manh_heur_expect} but is {manh_heur_actual} for \n{self.mock_env.room_state}"
         )
 
+        self.setUp(dim_room=(7, 7), num_boxes=2, random_seed=10, render_board=True)
+        self.mock_env.steps([2, 2, 2, 8, 6, 3])
+        self.mock_env.render_colored()
+        t = self.mock_env.manhattan_heuristic()
+        print(t)
+
     def test_in_corner(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 

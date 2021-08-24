@@ -110,6 +110,10 @@ class MctsSokobanEnv(SokobanEnv):
         boxes_not_on_target = set(tuple(box) for box in np.argwhere(self.room_state == 4))
         box_target_states   = set(tuple(box) for box in np.argwhere(self.room_state == 2))
 
+        # The player stands on a goal state of a box.
+        if len(box_target_states) < len(boxes_not_on_target):
+            box_target_states.add(tuple(np.argwhere(self.room_state == 5)[0]))
+
         if self._check_if_all_boxes_on_target():
             return 0
 
@@ -177,9 +181,11 @@ class MctsSokobanEnv(SokobanEnv):
     def update_total_reward(self):
         self.total_reward += self.reward_last
 
-    # TODO: implement get_return correctly
-    def get_return(self, state=None, step_idx=None):
+    def get_total_reward(self):
         return self.total_reward
+
+    def get_return(self):
+        return self.total_return
 
     def get_best_immediate_action(self, feasible_actions):
         rewards = []
