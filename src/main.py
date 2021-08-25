@@ -8,6 +8,8 @@ from time import time
 sys.path.append('my/path/to/module/folder')
 
 
+LEGAL_ACTIONS = np.array([1, 2, 3, 4])
+
 RANDOM_SEED = 10
 DIM_ROOM = 7
 NUM_BOXES = 2
@@ -206,7 +208,7 @@ if __name__ == "__main__":
                         help="Number of boxes on the board")
     parser.add_argument("--max_rollouts", type=np.int, default=500,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=30,
+    parser.add_argument("--max_depth", type=np.int, default=20,
                         help="Depth of each rollout (simulation)")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")

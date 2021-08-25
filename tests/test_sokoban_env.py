@@ -41,7 +41,7 @@ class TestSokobanEnv(SetUpEnv):
         )
 
     def test_state_after_action(self):
-        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=True)
 
         self.assertTrue(np.alltrue(self.mock_env.room_state == INITIAL_ROOM_STATE))
 
@@ -64,32 +64,16 @@ class TestSokobanEnv(SetUpEnv):
         self.assertFalse(self.mock_env.state_after_action(3)['state_changed'])
         self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(3)['new_state']))
 
-        # push right -> no change
-        self.assertFalse(self.mock_env.state_after_action(4)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(4)['new_state']))
-
-        # Moves
-        # move up -> no change
-        self.assertFalse(self.mock_env.state_after_action(5)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(5)['new_state']))
-
-        # move down -> no change
-        self.assertFalse(self.mock_env.state_after_action(6)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(6)['new_state']))
-
-        # move left -> no change
-        self.assertFalse(self.mock_env.state_after_action(7)['state_changed'])
-        self.assertTrue(np.alltrue(self.mock_env.room_state == self.mock_env.state_after_action(7)['new_state']))
-
-        # move right -> change
-        self.assertTrue(self.mock_env.state_after_action(8)['state_changed'])
+        # push right -> change
+        self.assertTrue(self.mock_env.state_after_action(4)['state_changed'])
         expected_state_after_action = np.array([[0, 0, 0, 0, 0, 0],
                                                 [0, 1, 1, 1, 1, 0],
                                                 [0, 0, 2, 1, 1, 0],
                                                 [0, 0, 0, 4, 1, 0],
                                                 [0, 0, 0, 1, 5, 0],
                                                 [0, 0, 0, 0, 0, 0]])
-        self.assertTrue(np.alltrue(expected_state_after_action == self.mock_env.state_after_action(8)['new_state']))
+
+        self.assertTrue(np.alltrue(expected_state_after_action == self.mock_env.state_after_action(4)['new_state']))
 
     def test_get_children(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
@@ -150,47 +134,47 @@ class TestSokobanEnv(SetUpEnv):
         )
 
         self.setUp(dim_room=(7, 7), num_boxes=2, random_seed=10, render_board=True)
-        self.mock_env.steps([2, 2, 2, 8, 6, 3])
+        self.mock_env.steps([2, 2, 2, 4, 2, 3])
         self.mock_env.render_colored()
         t = self.mock_env.manhattan_heuristic()
         print(t)
 
     def test_in_corner(self):
-        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
+        self.setUp(dim_room=(6, 6), num_boxes=1, render_board=True)
 
         self.assertFalse(self.mock_env._in_corner())
 
         # 1st example
-        self.mock_env.steps([8, 5, 5, 7, 2])
+        self.mock_env.steps([4, 1, 1, 3, 2])
         self.assertTrue(self.mock_env._in_corner())
 
         # 2nd example
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
-        self.mock_env.steps([1, 1, 7, 5, 4])
+        self.mock_env.steps([1, 1, 3, 1, 4])
         self.assertTrue(self.mock_env._in_corner())
 
         # 3rd example
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
-        self.mock_env.steps([1, 1, 8, 5, 3, 3])
+        self.mock_env.steps([1, 1, 4, 1, 3, 3])
         self.assertTrue(self.mock_env._in_corner())
 
         # 4th example: 3 walls around the box.
         self.setUp(dim_room=(8, 8), num_boxes=2, render_board=False)
 
-        self.mock_env.steps([2, 8, 6, 6, 7, 3, 5, 4, 4])
+        self.mock_env.steps([2, 4, 2, 2, 3, 3, 1, 4, 4])
         self.assertTrue(self.mock_env._in_corner())
 
     def test_deadlock_detection(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
         # Test corner deadlock.
-        self.mock_env.steps([8, 5, 5, 7])
+        self.mock_env.steps([4, 1, 1, 3])
         self.assertTrue(self.mock_env.deadlock_detection(actionToTake=2),
                         f"The room state after taking action 2 should be a deadlock.")
 
         # Test corner deadlock with 3 walls around the box.
         self.setUp(dim_room=(8, 8), num_boxes=2, render_board=False)
-        self.mock_env.steps([2, 8, 6, 6, 7, 3, 5, 4])
+        self.mock_env.steps([2, 4, 2, 2, 3, 3, 1, 4])
         self.assertTrue(self.mock_env.deadlock_detection(actionToTake=4),
                         f"The room state after taking action 2 should be a deadlock.")
 
@@ -202,24 +186,24 @@ class TestSokobanEnv(SetUpEnv):
     ###########################################################################
     def test_get_actions_lookup_chars(self):
         self.assertEqual(
-            self.mock_env.get_actions_lookup_chars([2, 3, 4, 5]),
-            ["D", "L", "R", "u"],
-            "The chars for actions [2,3,4,5] should be ['D', 'L', 'R', 'u]''"
+            self.mock_env.get_actions_lookup_chars([2, 3, 4, 1]),
+            ["D", "L", "R", "U"],
+            "The chars for actions [2,3,4,1] should be ['D', 'L', 'R', 'U']"
         )
 
         self.assertRaises(
             AssertionError,
             self.mock_env.get_actions_lookup_chars,
-            [2, 3, 9, 5]
+            [2, 3, 9, 1]
         )
 
     def test_print_actions_as_chars(self):
         self.setUp()
 
         self.assertEqual(
-            self.mock_env.print_actions_as_chars([2,3,4,5]),
-            "DLRu",
-            "The joined chars for actions [2,3,4,5] should be 'DLRu'"
+            self.mock_env.print_actions_as_chars([2,3,4,1]),
+            "DLRU",
+            "The joined chars for actions [2,3,4,1] should be 'DLRU'"
         )
 
         self.assertEqual(
@@ -231,7 +215,7 @@ class TestSokobanEnv(SetUpEnv):
     def test_get_best_immediate_action(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
-        self.mock_env.steps([1, 8, 5])
+        self.mock_env.steps([1, 4, 1])
         feasible_actions = self.mock_env.get_non_deadlock_feasible_actions()
         best_action = self.mock_env.get_best_immediate_action(feasible_actions)
         

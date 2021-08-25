@@ -2,6 +2,7 @@ import numpy as np
 
 from tests.set_up_env import SetUpEnv
 from src.algorithms.mcts import MctsNode
+from src.utils import ACTION_LOOKUP
 
 
 RANDOM_SEED = 0
@@ -48,11 +49,11 @@ class TestMctsNode(SetUpEnv):
 
         self.assertEqual(0, root.depth)
         self.assertTrue(np.alltrue(INITIAL_ROOM_6x6_1 == root.room_state))
-        self.assertEqual(9, root.n_actions)
+        self.assertEqual(len(ACTION_LOOKUP.keys()), root.n_actions)
         self.assertIsNone(root.prev_action)
         self.assertFalse(root.is_expanded)
         self.assertEqual(0, root.n_vlosses)
-        self.assertTrue(9 == len(root.child_N) == len(root.child_W) ==
+        self.assertTrue(len(ACTION_LOOKUP.keys()) == len(root.child_N) == len(root.child_W) ==
                         len(root.original_P) == len(root.child_P))
         self.assertEqual({}, root.children)
 
@@ -117,42 +118,41 @@ class TestMctsNode(SetUpEnv):
         root = MctsNode(self.mock_env, self.mock_env.get_n_actions())
         child_after_1 = root.maybe_add_child(1)
         root.maybe_add_child(2)
-        root.maybe_add_child(6)
-        root.maybe_add_child(7)
-        child_after_8 = root.maybe_add_child(8)
+        root.maybe_add_child(3)
+        child_after_8 = root.maybe_add_child(4)
 
         root.child_P = np.array(
-            [0.00, 0.13, 0.01, 0.01, 0.02, 0.00, 0.00, 0.00, 0.02],
+            [0.00, 0.13, 0.01, 0.01, 0.02],
             dtype=np.float32)
 
         # Mock as if all nodes were expanded.
         root.is_expanded = True
 
-        # Go the trajectory [U, r, u, L] and [U, U]
+        # Go the trajectory [U, R, U, L] and [U, U]
         child_after_1.maybe_add_child(1)
         child_after_1.is_expanded = True
         child_after_1.child_P = np.array(
-            [0.00, 0.2, 0.01, 0.01, 0.02, 0.00, 0.00, 0.02, 0.32],
+            [0.00, 0.2, 0.01, 0.01, 0.32],
             dtype=np.float32)
-        child_after_18 = child_after_1.maybe_add_child(8)
+        child_after_14 = child_after_1.maybe_add_child(4)
 
-        child_after_185 = child_after_18.maybe_add_child(5)
-        child_after_18.is_expanded = True
-        child_after_18.child_P = np.array(
-            [0.00, 0.02, 0.01, 0.01, 0.02, 0.61, 0.00, 0.00, 0.02],
+        child_after_141 = child_after_14.maybe_add_child(1)
+        child_after_14.is_expanded = True
+        child_after_14.child_P = np.array(
+            [0.00, 0.51, 0.01, 0.01, 0.02],
             dtype=np.float32)
 
         # Should be a terminal state.
-        child_after_185.maybe_add_child(3)
-        child_after_185.is_expanded = True
-        child_after_185.child_P = np.array(
-            [0.00, 0.02, 0.01, 0.61, 0.02, 0.61, 0.00, 0.00, 0.02],
+        child_after_141.maybe_add_child(3)
+        child_after_141.is_expanded = True
+        child_after_141.child_P = np.array(
+            [0.00, 0.61, 0.01, 0.61, 0.02],
             dtype=np.float32)
 
         # Go the trajectory [r, u] and [r, D]
         child_after_8.maybe_add_child(2)
         child_after_8.is_expanded = True
-        child_after_8.maybe_add_child(5)
+        child_after_8.maybe_add_child(1)
 
         leaf = root.select_until_leaf()
 
@@ -162,19 +162,15 @@ class TestMctsNode(SetUpEnv):
 
     def test_print_tree(self):
         print("test_print_tree()")
-        self.setUp(render_board=False)
+        self.setUp(render_board=True)
 
         root = MctsNode(self.mock_env, self.mock_env.get_n_actions())
         root.maybe_add_child(1)  # Feasible action
         root.maybe_add_child(2)  # Non feasible action
         root.maybe_add_child(3)  # Non feasible action
-        root.maybe_add_child(4)  # Non feasible action
-        root.maybe_add_child(5)  # Non feasible action
-        root.maybe_add_child(6)  # Non feasible action
-        root.maybe_add_child(7)  # Non feasible action
-        child_after_8 = root.maybe_add_child(8)  # Feasible action
+        child_after_8 = root.maybe_add_child(4)  # Feasible action
 
-        child_after_8.maybe_add_child(5)
+        child_after_8.maybe_add_child(3)
 
         if self.render_board:
             root.print_tree()

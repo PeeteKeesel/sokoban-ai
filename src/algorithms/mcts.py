@@ -51,7 +51,8 @@ class DummyNodeAboveRoot:
 
 class MctsNode:
 
-    def __init__(self, Env, n_actions, prev_action=None, parent=None):
+    def __init__(self, Env, n_actions=np.array([1,2,3,4]), prev_action=None,
+                 parent=None):
         self.Env = Env
         if parent is None:
             self.depth = 0
@@ -151,7 +152,7 @@ class MctsNode:
             # Choose action with the highest upper confidence bound.
             max_action = np.argmax(current.child_action_score)
             # Add new child MctsNode if action was not taken before.
-            current    = current.maybe_add_child(max_action)
+            current = current.maybe_add_child(max_action)
         return current
 
     # def select_until_leaf_random(self):
@@ -232,8 +233,10 @@ class MctsNode:
                     rdm_action = np.random.choice(feasible_actions)
                     current = current.maybe_add_child(rdm_action)
                 else:
-                    # sp_uct at the indices where feasible action indexes are.
-                    max_action_idx = np.argmax(current.sp_uct[feasible_actions])
+                    # Select action with maximal child_action_score.
+                    max_action_idx = np.argmax(
+                        current.child_action_score[feasible_actions]
+                    )
                     max_action = feasible_actions[max_action_idx]
                     current = current.maybe_add_child(max_action)
 
@@ -394,7 +397,7 @@ class MctsNode:
     #
     #     return tot_reward_of_simulation - leaf.Env.manhattan_heuristic()
 
-    def perform_simulation(self, max_depth, sim_policy="random"):
+    def perform_simulation(self, max_depth_simu, sim_policy="random"):
         """
         Performs the Simulation step of the SP-MCTS. Starting from the current
         MctsNode which should be a leaf node, we simulate until the game is
@@ -407,8 +410,9 @@ class MctsNode:
                           the reward of the resulting state with probability.
 
         Args:
-            max_depth (int): Maximal depth of the simulation tree. Describes
-                             how many steps a simulation should maximaly take.
+            max_depth_simu (int): Maximal depth of the simulation tree.
+                                  Describes how many steps a simulation should
+                                  maximaly take.
 
             sim_policy (str): The simulation policy. Describes how actions will
                               be chosen during the simulation.
@@ -420,7 +424,7 @@ class MctsNode:
 
         # Perform a rollout.
         tot_reward_of_sim, tot_return_of_sim, act_traj_sim, depth = 0, 0, [], 0
-        while not leaf.game_is_done() and depth < max_depth:
+        while not leaf.game_is_done() and depth < max_depth_simu:
             # Get a list of all feasible actions, excluding redundant and
             # deadlock actions.
             feasible_actions = leaf.Env.get_non_deadlock_feasible_actions()
@@ -506,7 +510,7 @@ class MctsNode:
         
         self.is_expanded = True
         #self.child_W = np.ones([self.n_actions], dtype=np.float32) * value
-        self.child_W[0] = -100
+        # self.child_W[0] = -100
         self.backup_value(value, up_to=up_to)
 
     # # NEW
@@ -610,8 +614,8 @@ class Mcts:
     performing the tree search.
     """
 
-    def __init__(self, Env, num_parallel,
-                 simulation_policy, max_rollouts, max_depth, agent_netw=None):
+    def __init__(self, Env, num_parallel, simulation_policy, max_rollouts,
+                 max_depth, agent_netw=None):
         """
         Arguments:
             Env                  (MctsSokobanEnv) - Environment dynamics.
@@ -637,7 +641,7 @@ class Mcts:
 
         self.root = None
 
-    def initialize_search(self, state=None):
+    def initialize_search(self):
         n_actions = self.Env.get_n_actions()
         self.root = MctsNode(self.Env, n_actions)
 
@@ -820,13 +824,13 @@ class Mcts:
             # finishing the game or by reaching the max no. of steps.
             if self.simulation_policy == SIMULATION_POLICIES["random"]:
                 tot_reward = leaf_node.perform_simulation(
-                    self.max_depth,
-                    SIMULATION_POLICIES["random"]
+                    max_depth_simu=self.max_depth,
+                    sim_policy=SIMULATION_POLICIES["random"]
                 )
             elif self.simulation_policy == SIMULATION_POLICIES["eps-greedy"]:
                 tot_reward = leaf_node.perform_simulation(
-                    self.max_depth,
-                    SIMULATION_POLICIES["eps-greedy"]
+                    max_depth_simu=self.max_depth,
+                    sim_policy=SIMULATION_POLICIES["eps-greedy"]
                 )
             else:
                 raise NotImplementedError("ERROR: Simulation policies other than 'random' not implemented yet.")

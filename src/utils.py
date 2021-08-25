@@ -84,7 +84,7 @@ BG_COLORS = {
     5: "green",   # agent
 }
 
-ACTION_LOOKUP = {
+ACTION_LOOKUP_LONG = {
     0: 'no operation',
     1: 'push up',
     2: 'push down',
@@ -96,7 +96,7 @@ ACTION_LOOKUP = {
     8: 'move right',
 }
 
-ACTION_LOOKUP_CHARS = {
+ACTION_LOOKUP_CHARS_LONG = {
     0: 'n',
     1: 'U',
     2: 'D',
@@ -108,7 +108,7 @@ ACTION_LOOKUP_CHARS = {
     8: 'r',
 }
 
-CHARS_LOOKUP_ACTIONS = {
+CHARS_LOOKUP_ACTIONS_LONG = {
     'n': 0,
     'U': 1,
     'D': 2,
@@ -118,6 +118,28 @@ CHARS_LOOKUP_ACTIONS = {
     'd': 6,
     'l': 7,
     'r': 8,
+}
+
+ACTION_LOOKUP = {
+    0: 'no operation',
+    1: 'push up',
+    2: 'push down',
+    3: 'push left',
+    4: 'push right'
+}
+
+ACTION_LOOKUP_CHARS = {
+    1: 'U',
+    2: 'D',
+    3: 'L',
+    4: 'R'
+}
+
+CHARS_LOOKUP_ACTIONS = {
+    'U': 1,
+    'D': 2,
+    'L': 3,
+    'R': 4
 }
 
 # Moves are mapped to coordinate changes as follows

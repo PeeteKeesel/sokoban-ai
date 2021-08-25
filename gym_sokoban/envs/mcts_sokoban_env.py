@@ -32,9 +32,9 @@ class MctsSokobanEnv(SokobanEnv):
         the action cannot be taken from the current state.
         """
 
-        children = [None for action in self.get_action_lookup().keys()]
+        children = [None for _ in self.get_action_lookup().keys()]
 
-        for action in range(len(self.get_action_lookup())):
+        for action in self.get_action_lookup().keys():
             state_after_action = self.state_after_action(action)
 
             if state_after_action['state_changed']:
@@ -78,8 +78,17 @@ class MctsSokobanEnv(SokobanEnv):
                     new_room_state[tuple(new_box_pos)] = 4
 
                 return {'new_state': new_room_state, 'state_changed': True}  # successful push operation
+            else:
+                # Push operation but no box in front of the player.
+                # Thus, the player just moves.
+                if self.room_state[tuple(new_player_pos)] == 1:
+                    new_room_state = self.room_state.copy()
+                    new_room_state[tuple(new_player_pos)] = 5
+                    new_room_state[tuple(cur_player_pos)] = 1
 
-            return {'new_state': self.room_state, 'state_changed': False}    # un-successful push operation
+                    return {'new_state': new_room_state, 'state_changed': True}  # successful push operation
+
+                return {'new_state': self.room_state, 'state_changed': False}    # un-successful push operation
 
         else:
             if self.room_state[tuple(new_player_pos)] not in [0, 4]:
