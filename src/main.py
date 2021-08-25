@@ -12,7 +12,7 @@ LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 
 RANDOM_SEED = 10
 DIM_ROOM = 7
-NUM_BOXES = 2
+NUM_BOXES = 1
 
 # ================================================================
 # def _run():
@@ -206,7 +206,7 @@ if __name__ == "__main__":
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=500,
+    parser.add_argument("--max_rollouts", type=np.int, default=50,
                         help="Number of rollouts (simulations) per move")
     parser.add_argument("--max_depth", type=np.int, default=20,
                         help="Depth of each rollout (simulation)")
