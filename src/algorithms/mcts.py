@@ -17,8 +17,8 @@ TEMP_THRESHOLD = 5
 
 # Large constant used to ensure that rarely explored nodes are
 # considered promising. Used for SP-UCT.
-D = 3
-C = 1
+D = 10
+C = 2
 
 # Different types of simulation/rollout policies.
 SIMULATION_POLICIES = {"random": "random",
@@ -29,7 +29,7 @@ SIMULATION_POLICIES = {"random": "random",
 EPS = 0.2
 
 # Discount factor for the return.
-GAMMA = 0.2
+GAMMA = 0.9
 
 
 class DummyNodeAboveRoot:
@@ -194,6 +194,8 @@ class MctsNode:
                         current.sp_uct[feasible_actions]
                     )
                     max_action = feasible_actions[max_action_idx]
+                    print(current.Env.render_colored())
+                    print(f"   max_action={max_action} feasible_actions={feasible_actions}  sp_uct={current.sp_uct}")
                     current = current.maybe_add_child(max_action)
 
         return current
@@ -286,7 +288,7 @@ class MctsNode:
 
             # Update total reward and return.
             tot_return_of_sim += GAMMA**depth * reward_last
-            print(30*" " + str(tot_return_of_sim))
+            print(30*" " + str(reward_last) + "    " + str(tot_return_of_sim))
             #tot_reward_of_sim += reward_last
             #leaf.Env.update_total_return(depth, GAMMA)
             #assert tot_return_of_sim == leaf.Env.total_return
@@ -971,7 +973,7 @@ class Mcts:
             mcts_copy.monte_carlo_tree_search()
             rollouts += 1
 
-        print(f"after {rollouts} rollouts we have child_N={mcts_copy.root.child_N}")
+        print(f"after {rollouts} rollouts we have child_N={mcts_copy.root.child_N} and sp_uct= {mcts_copy.root.sp_uct}")
         best_child = np.argmax(mcts_copy.root.child_N)
         mcts_copy.root.print_tree()
         print(f"best_child={best_child}")

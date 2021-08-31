@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from algorithms.mcts import Mcts
+from algorithms.mcts import Mcts, SIMULATION_POLICIES
 from gym_sokoban.envs.sokoban_env import *
 from time import time
 
@@ -208,14 +208,15 @@ if __name__ == "__main__":
                         help="Number of boxes on the board")
     parser.add_argument("--max_rollouts", type=np.int, default=50,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=20,
+    parser.add_argument("--max_depth", type=np.int, default=10,
                         help="Depth of each rollout (simulation)")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")
     parser.add_argument("--num_parallel", type=np.int, default=8,
                         help="Number of leaf nodes to collect before "
                              "evaluating them in conjunction")
-    parser.add_argument("--sim_policy", type=np.str, default="random",
+    parser.add_argument("--sim_policy", type=np.str,
+                        default=SIMULATION_POLICIES["eps-greedy"],
                         help="Simulation policy")
     parser.add_argument("--time_limit", type=np.int, default=60,
                         help="Time (in minutes) per board")
