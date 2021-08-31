@@ -4,14 +4,14 @@ from copy import deepcopy
 
 import numpy as np
 
-from gym_sokoban.envs.sokoban_env   import SokobanEnv, ACTION_LOOKUP_CHARS
-from tests.testing_environment      import unittest
-from src.algorithms                 import depth_first_search    as dfs
-from src.algorithms                 import breadth_first_search  as bfs
-from src.algorithms                 import uniform_cost_search   as ucs
-from src.algorithms                 import a_star_search         as astar
-from src.algorithms                 import depth_first_search_recursive  as dfs_recursive
-from src.algorithms.mcts            import MctsNode, Mcts
+from src.utils                  import ACTION_LOOKUP_CHARS
+from gym_sokoban.envs           import MctsSokobanEnv
+from tests.testing_environment  import unittest
+from src.algorithms             import depth_first_search    as dfs
+from src.algorithms             import breadth_first_search  as bfs
+from src.algorithms             import uniform_cost_search   as ucs
+from src.algorithms             import a_star_search         as astar
+from src.algorithms             import depth_first_search_recursive  as dfs_recursive
 
 RANDOM_SEED = 0
 
@@ -19,14 +19,17 @@ RANDOM_SEED = 0
 # ================================================================
 class TestAlgorithms(unittest.TestCase):
 
-    def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False, random_seed=RANDOM_SEED):
-        self.mock_env = SokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
+    def setUp(self, dim_room=(6, 6), num_boxes=3, print_board=False,
+              random_seed=RANDOM_SEED, render_env=False):
+        self.mock_env = MctsSokobanEnv(dim_room=dim_room, num_boxes=num_boxes)
 
         self.mock_env.seed(random_seed)
         np.random.seed(random_seed)
         random.seed(random_seed)
         self.mock_env.action_space.seed(random_seed)
         self.mock_env.reset()
+
+        self.render_env = render_env
 
         if print_board:
             print(f"\n---\nroom of size {dim_room} with {num_boxes} boxes and random_seed={random_seed}")
@@ -141,19 +144,21 @@ class TestAlgorithms(unittest.TestCase):
     def test_a_start_search(self):
         print("test_a_start_search")
 
-        self.setUp(dim_room=(10, 10), num_boxes=3, print_board=True)
+        self.setUp(dim_room=(7, 7), num_boxes=1, print_board=True,
+                   render_env=True)
         initialEnv = deepcopy(self.mock_env)
 
         start = time.time()
         _, node_env = astar(self.mock_env, print_steps=True)
         end = time.time()
 
-        initialEnv.render()
-        for a in node_env.action_trajectory:
-            initialEnv.render_colored()
-            time.sleep(1)
-            initialEnv.step(node_env.get_chars_lookup(a))
+        if self.render_env:
             initialEnv.render()
+            for a in node_env.action_trajectory:
+                initialEnv.render_colored()
+                time.sleep(1)
+                initialEnv.step(a)
+                initialEnv.render()
 
         print(f"runtime: {round(end - start, 4)} seconds")
 

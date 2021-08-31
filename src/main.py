@@ -2,8 +2,12 @@ import argparse
 import sys
 
 from algorithms.mcts import Mcts, SIMULATION_POLICIES
+from src.algorithms import depth_first_search as dfs
+from src.algorithms import breadth_first_search as bfs
+from src.algorithms import uniform_cost_search as ucs
+from src.algorithms import a_star_search as astar
 from gym_sokoban.envs.sokoban_env import *
-from time import time
+from time import time, sleep
 
 sys.path.append('my/path/to/module/folder')
 
@@ -13,6 +17,8 @@ LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 RANDOM_SEED = 10
 DIM_ROOM = 7
 NUM_BOXES = 1
+
+SEARCH_ALGORITHMS = {"dfs", "bfs", "ucs", "astar", "idastar"}
 
 # ================================================================
 # def _run():
@@ -133,9 +139,9 @@ def make_reproducible(env, random_seed):
     Since the environment is getting rendered randomly some reproducibility is
     needed.
 
-    Arguments:
-        env         (MctsSokobanEnv) - Environment.
-        random_seed (int)            - Seed for repoducibility.
+    Args:
+        env (MctsSokobanEnv): Environment.
+        random_seed (int): Seed for repoducibility.
     """
     env.seed(random_seed)
     np.random.seed(random_seed)
@@ -144,14 +150,64 @@ def make_reproducible(env, random_seed):
     env.reset()
 
 
-def mcts_solve(args):
+def create_environment(args):
+    """
+    Creates a Sokoban environment of a given dimension, with a given limit of
+    steps and a given number of boxes to put in the world.
 
-    # Create the environment.
+    Args:
+        args (Namespace object): Attributes to build the Sokoban environment.
+                                 Mandatories: dim_room, max_steps, num_boxes,
+                                              random_seed.
+
+    Returns:
+        env (MctsSokobanEnv): The Sokoban environment.
+    """
     env = gym.make("MCTS-Sokoban-v0",
                    dim_room=(args.dim_room, args.dim_room),
                    max_steps=args.max_steps,
                    num_boxes=args.num_boxes)
     make_reproducible(env, args.random_seed)
+
+    return env
+
+
+def search_algorithms_solve(args):
+
+    # Create the environment.
+    env = create_environment(args)
+    env.render_colored()
+
+    time_limit, metrics = arguments.time_limit * 60, None
+    if args.search_algo in SEARCH_ALGORITHMS:
+        if args.search_algo == "dfs":
+            metrics, _ = dfs(env, time_limit, print_steps=True)
+        elif args.search_algo == "bfs":
+            metrics, _ = bfs(env, time_limit, print_steps=True)
+        elif args.search_algo == "ucs":
+            metrics, _ = ucs(env, time_limit, print_steps=True)
+        elif args.search_algo == "astar":
+            metrics, _ = astar(env, time_limit, print_steps=True)
+        elif args.search_algo == "idastar":
+            raise NotImplementedError
+    else:
+        raise Exception(f"Algorithm `{args.search_algo}` is not in the list of"
+                        f" available algorithms"
+                        f" [`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
+
+    if args.render_env == "T":
+        env.render()
+        for a in metrics["action_traj"]:
+            sleep(0.5)
+            env.step(CHARS_LOOKUP_ACTIONS[a])
+            env.render()
+        env.sleep(60)
+
+
+def mcts_solve(args):
+
+    # Create the environment.
+    env = create_environment(args)
 
     # Initialize the Monte-Carlo-Tree-Search.
     mcts = Mcts(Env=env,
@@ -218,9 +274,19 @@ if __name__ == "__main__":
     parser.add_argument("--sim_policy", type=np.str,
                         default=SIMULATION_POLICIES["eps-greedy"],
                         help="Simulation policy")
-    parser.add_argument("--time_limit", type=np.int, default=60,
+    parser.add_argument("--search_algo", type=np.str,
+                        default="ucs",
+                        help="Alternative search algorithm to solve the game. "
+                             "Implemented options: "
+                             "[`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
+    parser.add_argument("--time_limit", type=np.int, default=1,
                         help="Time (in minutes) per board")
+    parser.add_argument("--render_env", type=np.str, default="F",
+                        help="If the result should be rendered `T` or not `F`")
     arguments = parser.parse_args()
 
     # Solve the game.
-    mcts_solve(arguments)
+    if arguments.search_algo:
+        search_algorithms_solve(arguments)
+    else:
+        mcts_solve(arguments)

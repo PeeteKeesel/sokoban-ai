@@ -115,6 +115,8 @@ class SokobanEnv(gym.Env):
             moved_player = self._move(action)
 
         self._calc_reward()
+
+        self.action_trajectory.append(action)
         
         done = self._check_if_done()
 

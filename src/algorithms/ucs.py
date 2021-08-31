@@ -1,15 +1,25 @@
-from copy               import deepcopy
-from gym_sokoban.envs   import SokobanEnv
+from copy import deepcopy
+from utils import print_search_algorithm_results
+from time import time
 
-def uniform_cost_search(env: SokobanEnv, print_steps: bool=None):
+
+def uniform_cost_search(env, time_limit: int, metrics: dict=None, print_steps: bool=None):
     """Uninformed search algorithm."""
 
-    metrics = {
-        'no_of_nodes_discovered': 0,    # the total number of discovered nodes. Including repeated ones.
-        'no_of_nodes_repeated': 0,      # the number of a times nodes got discovered repeatedly.
-        'nodes_explored': set(),        # the set of all discovered nodes excluding duplications.
-        'environemnts': set(),          # this saves the environment of the nodes.
-    }
+    current_time = 0
+
+    if not metrics:
+        metrics = {
+            'no_of_nodes_discovered': 0,  # The total number of discovered
+                                          # nodes. Including repeated ones.
+            'no_of_nodes_repeated': 0,  # The number of a times nodes got
+                                        # discovered repeatedly.
+            'nodes_explored': set(),  # The set of all discovered nodes
+                                      # excluding duplications.
+            'environemnts': set(),  # This saves the environment of the nodes.
+            'action_traj': [],  # The trajectory of action taken.
+            'time': 0  # The time it took until the current node.
+        }
 
     if env._check_if_done():
         return metrics, env
@@ -18,20 +28,23 @@ def uniform_cost_search(env: SokobanEnv, print_steps: bool=None):
     env_queue.push(0, env)
     metrics['no_of_nodes_discovered'] += 1
     while True:         # while the queue is not empty
+        start_time = time()
 
         if not env_queue:
             raise Exception('uniform_cost_search(): Solution NOT FOUND! Empty environment queue.')
 
         node_env_cost, node_env = env_queue.pop()   # get the environment with the lowest cost
 
+        if current_time >= time_limit:
+            print_search_algorithm_results("uniform_cost_search",
+                                           node_env, metrics,
+                                           "TIME LIMIT EXCEED")
+            return metrics, None
+
         if node_env._check_if_all_boxes_on_target():
-            print("------------------------------------------------------------------------------------\n" +
-                  f"uniform_cost_search(): Solution FOUND! Got {len(node_env.action_trajectory)} steps\n" +
-                  f"{node_env.action_trajectory}\n" +
-                  f"discovered: {metrics['no_of_nodes_discovered']}\n" +
-                  f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
-                  f"{len(metrics['nodes_explored'])}\n" +
-                  f"{node_env.room_state}")
+            print_search_algorithm_results("uniform_cost_search",
+                                           node_env, metrics,
+                                           "SOLUTION FOUND")
             return metrics, node_env
 
         if node_env._check_if_maxsteps():
@@ -62,6 +75,12 @@ def uniform_cost_search(env: SokobanEnv, print_steps: bool=None):
                         metrics['no_of_nodes_repeated'] += 1
                 else:
                     metrics['no_of_nodes_repeated'] += 1
+
+        # Update time and action trajectory.
+        current_time += time() - start_time
+        metrics['time'] = current_time
+        metrics['action_traj'] = \
+            node_env.get_actions_lookup_chars(node_env.action_trajectory)
 
 
 """Ordered queue by cost of being in a particular room state."""
