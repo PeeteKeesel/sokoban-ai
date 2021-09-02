@@ -48,13 +48,13 @@ def depth_first_search(env, time_limit: int, metrics: dict=None, print_steps: bo
                                            "TIME LIMIT EXCEED")
             return metrics, None
 
-        if node_env._check_if_all_boxes_on_target():
+        if node_env.all_boxes_on_target():
             print_search_algorithm_results("depth_first_search",
                                            node_env, metrics,
                                            "SOLUTION FOUND")
             return metrics, node_env
 
-        if node_env._check_if_maxsteps():
+        if node_env.max_steps_reached():
             print("Maximal number of steps reached!")
             continue
 

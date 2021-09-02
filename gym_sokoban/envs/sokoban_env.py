@@ -45,7 +45,14 @@ class SokobanEnv(gym.Env):
         # The total discounted reward until the current state.
         self.total_return = 0
 
+        # The trajectory of actions taken until the current state.
         self.action_trajectory = []
+
+        # The following is used for IDA*.
+        self.g_value = 0  # g(n): the cost to travel from root to node n.
+        self.f_value = 0  # f(n) = g(n) + h(n), where h(n) is a problem-
+                          # specific heuristic estimate of the cost to travel
+                          # from node n to the goal.
 
         # Other Settings
         self.viewer                 = None
@@ -290,12 +297,11 @@ class SokobanEnv(gym.Env):
             se = (boxPos[0] + 1, boxPos[1] + 1)
             e  = (boxPos[0],     boxPos[1] + 1)
             ne = (boxPos[0] - 1, boxPos[1] + 1)
-            if (self._is_wall(n) and self._is_wall(nw) and self._is_wall(nw)) \
+            if (self._is_wall(n) and self._is_wall(nw) and self._is_wall(w)) \
                 or (self._is_wall(w) and self._is_wall(sw) and self._is_wall(s)) \
                 or (self._is_wall(s) and self._is_wall(se) and self._is_wall(e)) \
                 or (self._is_wall(n) and self._is_wall(ne) and self._is_wall(e)):
                 return True
-
         return False
 
     def reset(self, second_player=False, render_mode='rgb_array'):

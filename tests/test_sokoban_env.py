@@ -120,6 +120,7 @@ class TestSokobanEnv(SetUpEnv):
         self.assertRaises(AssertionError,
                           manhattan_distance, np.array([2, 3, 4]), (5, 4))
 
+
     def test_manhattan_heuristic(self):
         self.setUp(dim_room=(6, 6), num_boxes=3, render_board=False)
 
@@ -138,6 +139,25 @@ class TestSokobanEnv(SetUpEnv):
         self.mock_env.render_colored()
         t = self.mock_env.manhattan_heuristic()
         print(t)
+
+    def test_manhattan_vs_hungarian(self):
+        self.setUp(dim_room=(7,7), num_boxes=2, render_board=False, random_seed=10)
+
+        self.mock_env.steps([2,2,2,3,1])
+        self.mock_env.render_colored()
+        print(f"      manhattan: {self.mock_env.manhattan_heuristic()}")
+        print(f"      hungarian: {self.mock_env.hungarian_heuristic()}")
+
+        self.mock_env.steps([2,4,4,2,3])
+        self.mock_env.render_colored()
+        print(f"      manhattan: {self.mock_env.manhattan_heuristic()}")
+        print(f"      hungarian: {self.mock_env.hungarian_heuristic()}")
+
+        self.mock_env.steps([1,1])
+        self.mock_env.render_colored()
+        print(f"      manhattan: {self.mock_env.manhattan_heuristic()}")
+        print(f"      hungarian: {self.mock_env.hungarian_heuristic()}")
+
 
     def test_in_corner(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=True)
@@ -180,6 +200,13 @@ class TestSokobanEnv(SetUpEnv):
 
         # TODO: test other deadlocks e.g. simple deadlocks
 
+    def test_deadlocks(self):
+        self.setUp(dim_room=(8, 8), num_boxes=1, render_board=False, random_seed=10)
+        self.mock_env.steps([1,1,1])
+        self.mock_env.render_colored()
+
+        self.assertFalse(self.mock_env.deadlock_detection(actionToTake=1))
+        #print(self.mock_env.get_non_deadlock_feasible_actions())
 
     ###########################################################################
     # static-methods                                                          #

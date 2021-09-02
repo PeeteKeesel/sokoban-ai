@@ -64,11 +64,11 @@ def colored_print(text, color, background_color, end=""):
 def print_search_algorithm_results(search_algo_name, node_env, metrics, message):
     print("------------------------------------------------------------------------------------\n" +
           f"{search_algo_name}(): {message}! Got {len(node_env.action_trajectory)} steps\n" +
-          f"{node_env.get_actions_lookup_chars(node_env.action_trajectory)}\n" +
+          f"trajectory: {node_env.print_actions_as_chars(node_env.action_trajectory)}\n" +
           f"discovered: {metrics['no_of_nodes_discovered']}\n" +
           f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
           f"{len(metrics['nodes_explored'])}\n" +
-          f"time:       {round(metrics['time'], 3)}")
+          f"time:       {round(metrics['time'], 3)} s")
 
 
 ###############################################################################

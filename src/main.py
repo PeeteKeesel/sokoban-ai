@@ -6,6 +6,7 @@ from src.algorithms import depth_first_search as dfs
 from src.algorithms import breadth_first_search as bfs
 from src.algorithms import uniform_cost_search as ucs
 from src.algorithms import a_star_search as astar
+from src.algorithms import ida_star_search as idastar
 from gym_sokoban.envs.sokoban_env import *
 from time import time, sleep
 
@@ -189,7 +190,7 @@ def search_algorithms_solve(args):
         elif args.search_algo == "astar":
             metrics, _ = astar(env, time_limit, print_steps=True)
         elif args.search_algo == "idastar":
-            raise NotImplementedError
+            metrics, _ = idastar(env, time_limit, print_steps=True)
     else:
         raise Exception(f"Algorithm `{args.search_algo}` is not in the list of"
                         f" available algorithms"
@@ -272,14 +273,14 @@ if __name__ == "__main__":
                         help="Number of leaf nodes to collect before "
                              "evaluating them in conjunction")
     parser.add_argument("--sim_policy", type=np.str,
-                        default=SIMULATION_POLICIES["eps-greedy"],
+                        default=SIMULATION_POLICIES["random"],
                         help="Simulation policy")
     parser.add_argument("--search_algo", type=np.str,
-                        default="ucs",
+                        default="idastar",
                         help="Alternative search algorithm to solve the game. "
                              "Implemented options: "
                              "[`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
-    parser.add_argument("--time_limit", type=np.int, default=1,
+    parser.add_argument("--time_limit", type=np.int, default=5,
                         help="Time (in minutes) per board")
     parser.add_argument("--render_env", type=np.str, default="F",
                         help="If the result should be rendered `T` or not `F`")

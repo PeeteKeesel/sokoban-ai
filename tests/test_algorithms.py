@@ -11,6 +11,7 @@ from src.algorithms             import depth_first_search    as dfs
 from src.algorithms             import breadth_first_search  as bfs
 from src.algorithms             import uniform_cost_search   as ucs
 from src.algorithms             import a_star_search         as astar
+from src.algorithms             import ida_star_search       as idastar
 from src.algorithms             import depth_first_search_recursive  as dfs_recursive
 
 RANDOM_SEED = 0
@@ -161,6 +162,14 @@ class TestAlgorithms(unittest.TestCase):
                 initialEnv.render()
 
         print(f"runtime: {round(end - start, 4)} seconds")
+
+
+    def test_ida_star_search(self):
+        print("test_ida_star_search()")
+        self.setUp(dim_room=(7, 7), num_boxes=1,
+                   print_board=True, render_env=True)
+
+        _, _ = idastar(self.mock_env, print_steps=True)
 
 
     def test_algo_on_multiple_levels(self):

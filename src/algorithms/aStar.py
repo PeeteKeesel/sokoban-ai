@@ -26,7 +26,7 @@ def a_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=No
             'time': 0  # The time it took until the current node.
         }
 
-    if env._check_if_done():
+    if env.is_done():
         return metrics, env
 
     env_queue = PriorityQueueAStar()  # initialize a priority queue for A star
@@ -43,18 +43,18 @@ def a_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=No
         node_env_cost_total, node_env_cost_actual, node_env = env_queue.pop()   # get the environment with the lowest cost
 
         if current_time >= time_limit:
-            print_search_algorithm_results("depth_first_search",
+            print_search_algorithm_results("a_star_search",
                                            node_env, metrics,
                                            "TIME LIMIT EXCEED")
             return metrics, None
 
-        if node_env._check_if_all_boxes_on_target():
+        if node_env.all_boxes_on_target():
             print_search_algorithm_results("a_star_search",
                                            node_env, metrics,
                                            "SOLUTION FOUND")
             return metrics, node_env
 
-        if node_env._check_if_maxsteps():
+        if node_env.max_steps_reached():
             #print("Maximal number of steps reached!")
             continue
 
@@ -67,7 +67,7 @@ def a_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=No
         else:
             for action, child in enumerate(children):
                 if print_steps:
-                    if metrics["no_of_nodes_discovered"] % 10000 == 0:
+                    if metrics["no_of_nodes_discovered"] % 10_000 == 0:
                         print(f'no_of_nodes_discovered: {metrics["no_of_nodes_discovered"]}')
 
                 child_env       = deepcopy(node_env)      # copy the environment to take a "virtual" step
