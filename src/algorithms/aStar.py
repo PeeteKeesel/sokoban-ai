@@ -10,6 +10,23 @@ def a_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=No
 
     Time: O(|E|) = (b^d)
     Space: O(|V|) = O(b^d)
+
+    Args:
+        env (MctsSokobanEnv): Extension of the SokobanEnv class holding the
+                              dynamics off the environment.
+
+        time_limit (int): The maximum time the algorithm is allowed to run.
+
+        metrics (dict): A dictionary containing relevant information about
+                        the run of the algorithm.
+
+        print_steps (bool): True, if partial steps should be printed, False,
+                            otherwise.
+
+    Returns:
+        metrics, env: The updated metrics dictionary and the environment of the
+                      final state. Does not have to be a terminal state since
+                      the algorithm can stop e.g. after a specific time.
     """
     current_time = 0
 

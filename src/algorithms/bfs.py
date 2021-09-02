@@ -6,6 +6,23 @@ from src.utils import print_search_algorithm_results
 def breadth_first_search(env, time_limit: int, metrics: dict=None, print_steps: bool=None):
     """
     Traverses the given {@env} in a breadth first search way until a termination condition is met.
+
+    Args:
+        env (MctsSokobanEnv): Extension of the SokobanEnv class holding the
+                              dynamics off the environment.
+
+        time_limit (int): The maximum time the algorithm is allowed to run.
+
+        metrics (dict): A dictionary containing relevant information about
+                        the run of the algorithm.
+
+        print_steps (bool): True, if partial steps should be printed, False,
+                            otherwise.
+
+    Returns:
+        metrics, env: The updated metrics dictionary and the environment of the
+                      final state. Does not have to be a terminal state since
+                      the algorithm can stop e.g. after a specific time.
     """
     current_time = 0
 
@@ -22,7 +39,7 @@ def breadth_first_search(env, time_limit: int, metrics: dict=None, print_steps: 
             'time': 0  # The time it took until the current node.
         }
 
-    if env._check_if_done():
+    if env.is_done():
         return metrics, env
 
     env_queue = [env]  # this serves as the stack for the environments.
@@ -43,13 +60,13 @@ def breadth_first_search(env, time_limit: int, metrics: dict=None, print_steps: 
                                            "TIME LIMIT EXCEED")
             return metrics, None
 
-        if node_env._check_if_all_boxes_on_target():
+        if node_env.all_boxes_on_target():
             print_search_algorithm_results("breadth_first_search",
                                            node_env, metrics,
                                            "SOLUTION FOUND")
             return metrics, node_env
 
-        if node_env._check_if_maxsteps():
+        if node_env.max_steps_reached():
             print("Maximal number of steps reached!")
             continue
 

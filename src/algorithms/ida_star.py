@@ -58,8 +58,7 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
         time_limit (int): The maximum time the algorithm is allowed to run.
 
         heuristic (str): Name of the heuristic method to use. Implemented
-                         options can be found in
-                         gym_sokoban/envs/mcts_sokoban_env.py
+                         options can be found in src/utils.py
 
         metrics (dict): A dictionary containing relevant information about
                         the run of the algorithm.
@@ -166,12 +165,12 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
                     child.render_colored()
                     # test if node has been "closed"
                     if is_closed(closedSet, child):
-                        print(15*" "+"is closed")
+                        #print(15*" "+"is closed")
                         continue
 
                     # Check if the node has already been generated.
                     if hash_table.check_add(child):
-                        print(15 * " " + "has been checked")
+                        #print(15 * " " + "has been checked")
                         metrics['no_of_nodes_repeated'] += 1
                         continue
 
@@ -179,15 +178,15 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
                     child.f_value = child.g_value + child.hungarian_heuristic()
                     openSet.insert(0, child)
             else:
-                print(10*" "+"visitSet.insert()")
+                #print(10*" "+"visitSet.insert()")
                 visitSet.insert(0, currentState)
 
             # Update time.
             current_time += time() - start_time_inner
             metrics['time'] = current_time
 
-        print(f"nodes checked: {nodes}")
-        print(f"iteration: {it}")
+        # print(f"nodes checked: {nodes}")
+        # print(f"iteration: {it}")
         it = it + 1
         if len(visitSet) == 0:
             print("FAIL")
