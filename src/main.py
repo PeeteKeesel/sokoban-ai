@@ -1,7 +1,7 @@
 import argparse
 import sys
 
-from algorithms.mcts import Mcts, SIMULATION_POLICIES
+from algorithms.mcts import Mcts
 from src.algorithms import depth_first_search as dfs
 from src.algorithms import breadth_first_search as bfs
 from src.algorithms import uniform_cost_search as ucs
@@ -18,8 +18,6 @@ LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 RANDOM_SEED = 10
 DIM_ROOM = 7
 NUM_BOXES = 1
-
-SEARCH_ALGORITHMS = {"dfs", "bfs", "ucs", "astar", "idastar"}
 
 # ================================================================
 # def _run():
@@ -190,7 +188,8 @@ def search_algorithms_solve(args):
         elif args.search_algo == "astar":
             metrics, _ = astar(env, time_limit, print_steps=True)
         elif args.search_algo == "idastar":
-            metrics, _ = idastar(env, time_limit, print_steps=True)
+            metrics, _ = idastar(env, time_limit, print_steps=True,
+                                 heuristic=args.heuristic)
     else:
         raise Exception(f"Algorithm `{args.search_algo}` is not in the list of"
                         f" available algorithms"
@@ -274,12 +273,19 @@ if __name__ == "__main__":
                              "evaluating them in conjunction")
     parser.add_argument("--sim_policy", type=np.str,
                         default=SIMULATION_POLICIES["random"],
-                        help="Simulation policy")
+                        help="Simulation policy. "
+                             "Implemented options: "
+                             "[`random`, `eps-greedy`]")
     parser.add_argument("--search_algo", type=np.str,
-                        default="idastar",
+                        default=SEARCH_ALGORITHMS["idastar"],
                         help="Alternative search algorithm to solve the game. "
                              "Implemented options: "
                              "[`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
+    parser.add_argument("--heuristic", type=np.str,
+                        default=HEURISTICS["hungarian"],
+                        help="Heuristic method for IDA* search algorithm. "
+                             "Implemented options: "
+                             "[`manhattan`, `hungarian`]")
     parser.add_argument("--time_limit", type=np.int, default=5,
                         help="Time (in minutes) per board")
     parser.add_argument("--render_env", type=np.str, default="F",

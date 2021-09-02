@@ -2,11 +2,13 @@
 Basic structure is adapted from
 https://github.com/tensorflow/minigo/blob/master/mcts.py
 """
-from copy import deepcopy
-import random
 import numpy as np
 import collections
 import math
+
+from copy import deepcopy
+from utils import SIMULATION_POLICIES
+
 
 c_PUCT = 1.38   # Constant determining the level of exploration.
 D_NOISE_ALPHA = 0.03  # Dirichlet noise alpha parameter to ensure exploration.
@@ -19,10 +21,6 @@ TEMP_THRESHOLD = 5
 # considered promising. Used for SP-UCT.
 D = 10
 C = 2
-
-# Different types of simulation/rollout policies.
-SIMULATION_POLICIES = {"random": "random",
-                       "eps-greedy": "eps-greedy"}
 
 # Probability for selection a random action. Used for the `eps-greedy`
 # simulation policy.

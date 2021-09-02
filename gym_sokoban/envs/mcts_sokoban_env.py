@@ -2,7 +2,6 @@ from copy         import deepcopy
 from .sokoban_env import SokobanEnv
 from src.utils    import *
 from typing       import List
-from munkres import Munkres
 
 import numpy as np
 

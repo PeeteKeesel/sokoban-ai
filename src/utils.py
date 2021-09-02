@@ -1,80 +1,32 @@
 import time
 
-###############################################################################
-# Methods                                                                     #
-#   Supporting methods for other files                                        #
-###############################################################################
-
-def log(test_env, iteration, step_idx, total_reward):
-    """
-    Logs one step in a testing episode.
-
-    Arguments:
-        test_env:       Test environemnt that should be rendered.
-        iteration:      Number of training iterations so far.
-        step_idx:       Index of the step in the episode.
-        total_reward:   Total reward collected so far.
-    """
-    time.sleep(.3)
-    print()
-    print(f"Training Episodes: {iteration}")
-    test_env.colored_print()
-    print(f"Step:   {step_idx}")
-    print(f"Return: {total_reward}")
-
-def manhattan_distance(pos1, pos2):
-    """
-    Returns the Manhattan distance between two 2-dimensional points.
-    Generally, in a 2d-grid: What is the minimal number of vertical and horizontal
-    steps to go to come from position {@pos1} to position {@pos2}.
-
-    Arguments:
-        pos1  (2d-list) or (2d-tuple)  - Position in a 2-dimensional plane.
-        pos2  (2d-list) or (2d-tuple) - Position in a 2-dimensional plane.
-    Returns:
-        (float)  - The Manhattan distance between pos1 and pos2.
-    """
-    assert len(pos1) == len(pos2) == 2
-    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
-
-def convert_room_state_to_output_format(mat):
-    for key, value in LEVEL_FORMAT.items():
-        mat[mat==str(key)] = value
-    return mat
-
-def print_room_state(mat):
-    for i in range(mat.shape[0]):
-        for j in range(mat.shape[1]):
-            print(mat[i][j], end='')
-        print()
-    print()
-
-def colored_print(text, color, background_color, end=""):
-    """
-    Prints text with color.
-    """
-    color_string = BACKGROUND_COLORS[background_color].format(COLORS[color])
-    text = f"\x1b[{color_string}m{text}\x1b[0m{end}"
-    if end == "":
-        print(text, end=end)
-    else:
-        print(text)
-
-
-def print_search_algorithm_results(search_algo_name, node_env, metrics, message):
-    print("------------------------------------------------------------------------------------\n" +
-          f"{search_algo_name}(): {message}! Got {len(node_env.action_trajectory)} steps\n" +
-          f"trajectory: {node_env.print_actions_as_chars(node_env.action_trajectory)}\n" +
-          f"discovered: {metrics['no_of_nodes_discovered']}\n" +
-          f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
-          f"{len(metrics['nodes_explored'])}\n" +
-          f"time:       {round(metrics['time'], 3)} s")
-
 
 ###############################################################################
-# Global variables                                                            #
-#   Supporting variables for other files                                      #
+# Global variables
+#   Supporting variables for other files.
+#   If any global values need to be changed, e.g. the name a user needs to
+#   input to use the `eps-greedy` simulation policy, then the value of the
+#   dictionary SIMULATION_POLICIES needs to be changed.
+#   example: The input should be `epsgreedy` instead of `eps-greedy`, then
+#            change
+#            SIMULATION_POLICIES = {"random": "random",
+#                                   "eps-greedy": "epsgreedy"}
 ###############################################################################
+
+# Different search algorithms instead of MCTS.
+SEARCH_ALGORITHMS = {"dfs": "dfs",
+                     "bfs": "bfs",
+                     "ucs": "ucs",
+                     "astar": "astar",
+                     "idastar": "idastar"}
+
+# Different heuristics to use for IDA*.
+HEURISTICS = {"manhattan": "manhattan",
+              "hungarian": "hungarian"}
+
+# Different types of simulation/rollout policies used in mcts.py
+SIMULATION_POLICIES = {"random": "random",
+                       "eps-greedy": "eps-greedy"}
 
 LEVEL_FORMAT = {
     0: '#',  # wall
@@ -179,3 +131,75 @@ COLORS = {"black": "30",
           "purple": "35",
           "olive green": "36",
           "white": "37"}
+
+
+
+###############################################################################
+# Methods
+#   Supporting methods for other files
+###############################################################################
+
+def log(test_env, iteration, step_idx, total_reward):
+    """
+    Logs one step in a testing episode.
+
+    Arguments:
+        test_env:       Test environemnt that should be rendered.
+        iteration:      Number of training iterations so far.
+        step_idx:       Index of the step in the episode.
+        total_reward:   Total reward collected so far.
+    """
+    time.sleep(.3)
+    print()
+    print(f"Training Episodes: {iteration}")
+    test_env.colored_print()
+    print(f"Step:   {step_idx}")
+    print(f"Return: {total_reward}")
+
+def manhattan_distance(pos1, pos2):
+    """
+    Returns the Manhattan distance between two 2-dimensional points.
+    Generally, in a 2d-grid: What is the minimal number of vertical and horizontal
+    steps to go to come from position {@pos1} to position {@pos2}.
+
+    Arguments:
+        pos1  (2d-list) or (2d-tuple)  - Position in a 2-dimensional plane.
+        pos2  (2d-list) or (2d-tuple) - Position in a 2-dimensional plane.
+    Returns:
+        (float)  - The Manhattan distance between pos1 and pos2.
+    """
+    assert len(pos1) == len(pos2) == 2
+    return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+def convert_room_state_to_output_format(mat):
+    for key, value in LEVEL_FORMAT.items():
+        mat[mat==str(key)] = value
+    return mat
+
+def print_room_state(mat):
+    for i in range(mat.shape[0]):
+        for j in range(mat.shape[1]):
+            print(mat[i][j], end='')
+        print()
+    print()
+
+def colored_print(text, color, background_color, end=""):
+    """
+    Prints text with color.
+    """
+    color_string = BACKGROUND_COLORS[background_color].format(COLORS[color])
+    text = f"\x1b[{color_string}m{text}\x1b[0m{end}"
+    if end == "":
+        print(text, end=end)
+    else:
+        print(text)
+
+
+def print_search_algorithm_results(search_algo_name, node_env, metrics, message):
+    print("------------------------------------------------------------------------------------\n" +
+          f"{search_algo_name}(): {message}! Got {len(node_env.action_trajectory)} steps\n" +
+          f"trajectory: {node_env.print_actions_as_chars(node_env.action_trajectory)}\n" +
+          f"discovered: {metrics['no_of_nodes_discovered']}\n" +
+          f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
+          f"{len(metrics['nodes_explored'])}\n" +
+          f"time:       {round(metrics['time'], 3)} s")

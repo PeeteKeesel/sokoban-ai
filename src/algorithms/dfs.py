@@ -11,6 +11,23 @@ def depth_first_search(env, time_limit: int, metrics: dict=None, print_steps: bo
 
     Time: O(|V| + |E|)
     Space: O(|V|)
+
+    Args:
+        env (MctsSokobanEnv): Extension of the SokobanEnv class holding the
+                              dynamics off the environment.
+
+        time_limit (int): The maximum time the algorithm is allowed to run.
+
+        metrics (dict): A dictionary containing relevant information about
+                        the run of the algorithm.
+
+        print_steps (bool): True, if partial steps should be printed, False,
+                            otherwise.
+
+    Returns:
+        metrics, env: The updated metrics dictionary and the environment of the
+                      final state. Does not have to be a terminal state since
+                      the algorithm can stop e.g. after a specific time.
     """
     current_time = 0
 
@@ -27,7 +44,7 @@ def depth_first_search(env, time_limit: int, metrics: dict=None, print_steps: bo
             'time': 0  # The time it took until the current node.
         }
 
-    if env._check_if_done():
+    if env.is_done():
         return metrics, env
 
     env_queue = [env]  # this serves as the stack for the environments.

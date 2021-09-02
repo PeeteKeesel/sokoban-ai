@@ -1,7 +1,5 @@
-from copy import deepcopy
-from utils import print_search_algorithm_results
+from utils import print_search_algorithm_results, HEURISTICS
 from time import time
-import numpy as np
 import sys
 
 
@@ -42,7 +40,8 @@ def is_closed(closedSet, x):
     return False
 
 
-def ida_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=None):
+def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
+                    print_steps: bool=None):
     """
     Performs the iterative deepening A* algorithm. At each iteration, a
     depth-first search is performed, cutting off a branch when its total cost
@@ -51,6 +50,27 @@ def ida_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=
     iteration of the algorithm. At each iteration, the threshld used for the
     next iteration is the minimum cost of all values that exceeded the current
     threshold.
+
+    Args:
+        env (MctsSokobanEnv): Extension of the SokobanEnv class holding the
+                              dynamics off the environment.
+
+        time_limit (int): The maximum time the algorithm is allowed to run.
+
+        heuristic (str): Name of the heuristic method to use. Implemented
+                         options can be found in
+                         gym_sokoban/envs/mcts_sokoban_env.py
+
+        metrics (dict): A dictionary containing relevant information about
+                        the run of the algorithm.
+
+        print_steps (bool): True, if partial steps should be printed, False,
+                            otherwise.
+
+    Returns:
+        metrics, env: The updated metrics dictionary and the environment of the
+                      final state. Does not have to be a terminal state since
+                      the algorithm can stop e.g. after a specific time.
     """
     current_time = 0
 
@@ -74,10 +94,15 @@ def ida_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=
     openSet = []
     closedSet = []
     visitSet = []
-    pathLimit = env.hungarian_heuristic()
-    print(f"manhattan: {env.manhattan_heuristic()}")
-    print(f"hungarian: {env.hungarian_heuristic()}")
-    success = False
+    pathLimit = 0
+    if heuristic == HEURISTICS["manhattan"]:
+        pathLimit = env.manhattan_heuristic() - 1
+    elif heuristic == HEURISTICS["hungarian"]:
+        pathLimit = env.hungarian_heuristic()
+    else:
+        raise NotImplementedError(
+            f"The specified heuristic `{heuristic}` is not implemented."
+        )
     it = 0
 
     while True:
@@ -125,10 +150,13 @@ def ida_star_search(env, time_limit: int, metrics: dict=None, print_steps: bool=
                 print("Limit of nodes reached: exiting without a solution.")
                 sys.exit(1)
 
-            currentState.f_value = currentState.g_value + currentState.hungarian_heuristic()
-            print(f"   manhattan: {currentState.manhattan_heuristic()}")
-            print(f"   hungarian: {currentState.hungarian_heuristic()}")
-            print(5*" "+f"   currentState.f_value = {currentState.f_value} ? {pathLimit} = pathLimit")
+            if heuristic == HEURISTICS["manhattan"]:
+                currentState.f_value = currentState.g_value + currentState.manhattan_heuristic()
+            else:
+                currentState.f_value = currentState.g_value + currentState.hungarian_heuristic()
+            # print(f"   manhattan: {currentState.manhattan_heuristic()}")
+            # print(f"   hungarian: {currentState.hungarian_heuristic()}")
+            # print(5*" "+f"   currentState.f_value = {currentState.f_value} ? {pathLimit} = pathLimit")
             if currentState.f_value <= pathLimit:
                 closedSet.insert(0, currentState)
                 print(10*" "+"children")
