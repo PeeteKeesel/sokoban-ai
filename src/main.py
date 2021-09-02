@@ -9,9 +9,10 @@ from src.algorithms import a_star_search as astar
 from src.algorithms import ida_star_search as idastar
 from gym_sokoban.envs.sokoban_env import *
 from time import time, sleep
+from utils import SIMULATION_POLICIES, SEARCH_ALGORITHMS, HEURISTICS
+
 
 sys.path.append('my/path/to/module/folder')
-
 
 LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 
@@ -277,7 +278,7 @@ if __name__ == "__main__":
                              "Implemented options: "
                              "[`random`, `eps-greedy`]")
     parser.add_argument("--search_algo", type=np.str,
-                        default=SEARCH_ALGORITHMS["idastar"],
+                        default="",#SEARCH_ALGORITHMS["idastar"],
                         help="Alternative search algorithm to solve the game. "
                              "Implemented options: "
                              "[`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
