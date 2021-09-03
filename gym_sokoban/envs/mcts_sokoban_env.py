@@ -211,7 +211,7 @@ class MctsSokobanEnv(SokobanEnv):
         envAfterAction = deepcopy(self)
         _, rew, _, _ = envAfterAction.step(action=actionToTake)
         # envAfterAction.render_colored()
-        print(envAfterAction.is_deadlock())
+        # print(envAfterAction.is_deadlock())
 
         if envAfterAction.is_deadlock() and \
                 np.abs(envAfterAction.reward_last - self.reward_last) < envAfterAction.reward_box_on_target:

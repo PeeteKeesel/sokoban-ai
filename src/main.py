@@ -263,7 +263,7 @@ if __name__ == "__main__":
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=50,
+    parser.add_argument("--max_rollouts", type=np.int, default=100,
                         help="Number of rollouts (simulations) per move")
     parser.add_argument("--max_depth", type=np.int, default=10,
                         help="Depth of each rollout (simulation)")
@@ -287,7 +287,7 @@ if __name__ == "__main__":
                         help="Heuristic method for IDA* search algorithm. "
                              "Implemented options: "
                              "[`manhattan`, `hungarian`]")
-    parser.add_argument("--time_limit", type=np.int, default=5,
+    parser.add_argument("--time_limit", type=np.int, default=60,
                         help="Time (in minutes) per board")
     parser.add_argument("--render_env", type=np.str, default="F",
                         help="If the result should be rendered `T` or not `F`")

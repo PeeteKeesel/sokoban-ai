@@ -184,6 +184,11 @@ class TestSokobanEnv(SetUpEnv):
         self.mock_env.steps([2, 4, 2, 2, 3, 3, 1, 4, 4])
         self.assertTrue(self.mock_env._in_corner())
 
+    def test_is_deadlock(self):
+        self.setUp(dim_room=(7, 7), num_boxes=2, render_board=False, random_seed=10)
+        self.mock_env.steps([4,4])
+        self.assertFalse(self.mock_env.is_deadlock())
+
     def test_deadlock_detection(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)
 
