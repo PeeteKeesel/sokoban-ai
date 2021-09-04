@@ -186,8 +186,34 @@ class TestSokobanEnv(SetUpEnv):
 
     def test_is_deadlock(self):
         self.setUp(dim_room=(7, 7), num_boxes=2, render_board=False, random_seed=10)
-        self.mock_env.steps([4,4])
+
+        self.mock_env.step(4)
+        self.mock_env.render_colored()
+        print(self.mock_env.get_non_deadlock_feasible_actions())
+
+        self.mock_env.step(4)
+        print(self.mock_env.get_non_deadlock_feasible_actions())
         self.assertFalse(self.mock_env.is_deadlock())
+
+        self.mock_env.step(2)
+        print(self.mock_env.get_non_deadlock_feasible_actions())
+
+    def test_get_children_player_on_goal(self):
+        """
+        This tests the case when the player wants to move to a position which
+        is a goal position of a box.
+        """
+        self.setUp(dim_room=(7, 7), num_boxes=2, render_board=False, random_seed=10)
+
+        self.mock_env.step(4)
+        self.assertEqual(2,
+                        len([c for c in self.mock_env.get_children() if c is not None]),
+                        "The state should have 2 children which are not None.")
+
+        self.assertCountEqual([3, 4],
+                          self.mock_env.get_non_deadlock_feasible_actions(),
+                          "Feasible non feadlock actions should be `[3, 4]`.")
+
 
     def test_deadlock_detection(self):
         self.setUp(dim_room=(6, 6), num_boxes=1, render_board=False)

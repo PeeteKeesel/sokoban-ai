@@ -80,8 +80,9 @@ class MctsSokobanEnv(SokobanEnv):
                 return {'new_state': new_room_state, 'state_changed': True}  # successful push operation
             else:
                 # Push operation but no box in front of the player.
-                # Thus, the player just moves.
-                if self.room_state[tuple(new_player_pos)] == 1:
+                # Thus, the player just moves. The new position can also be on
+                # a goal position.
+                if self.room_state[tuple(new_player_pos)] in [1, 2]:
                     new_room_state = self.room_state.copy()
                     new_room_state[tuple(new_player_pos)] = 5
                     new_room_state[tuple(cur_player_pos)] = 1
