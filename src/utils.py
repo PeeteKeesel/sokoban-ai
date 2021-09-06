@@ -13,12 +13,21 @@ import time
 #                                   "eps-greedy": "epsgreedy"}
 ###############################################################################
 
-# Different search algorithms instead of MCTS.
-SEARCH_ALGORITHMS = {"dfs": "dfs",
-                     "bfs": "bfs",
-                     "ucs": "ucs",
-                     "astar": "astar",
-                     "idastar": "idastar"}
+# Names of the search algorithms. This is important to the code.
+ALGORITHM_NAME_DFS = "dfs"
+ALGORITHM_NAME_BFS = "bfs"
+ALGORITHM_NAME_UCS = "ucs"
+ALGORITHM_NAME_A_STAR = "astar"
+ALGORITHM_NAME_IDA_STAR = "idastar"
+ALGORITHM_NAME_MCTS = "mcts"
+
+# Different search algorithms instead of MCTS. The keys are important to the
+# code. The valuea are used as the names the user has to input.
+SEARCH_ALGORITHMS = {ALGORITHM_NAME_DFS: "dfs",
+                     ALGORITHM_NAME_BFS: "bfs",
+                     ALGORITHM_NAME_UCS: "ucs",
+                     ALGORITHM_NAME_A_STAR: "astar",
+                     ALGORITHM_NAME_IDA_STAR: "idastar"}
 
 # Different heuristics to use for IDA*.
 HEURISTICS = {"manhattan": "manhattan",
@@ -132,6 +141,31 @@ COLORS = {"black": "30",
           "olive green": "36",
           "white": "37"}
 
+# Metrics to save for output reasons.
+METRICS_SCELETON = {
+    'no_of_nodes_discovered': 0,  # The total number of discovered
+                                  # nodes. Including repeated ones.
+    'no_of_nodes_repeated': 0,  # The number of a times nodes got
+                                # discovered repeatedly.
+    'nodes_explored': set(),  # The set of all discovered nodes
+                              # excluding duplications.
+    'environemnts': set(),  # This saves the environment of the nodes.
+    'action_traj': [],  # The trajectory of action taken.
+    'time': 0  # The time it took until the current node.
+}
+
+# Messages for the outcome of levels.
+MESSAGE_SOLUTION_FOUND = "solution-found"
+MESSAGE_TIME_LIMIT_REACHED = "time-limit-reached"
+MESSAGE_MAX_STEPS_PERFORMED = "max-steps-performed"
+
+OUTCOMES = {MESSAGE_SOLUTION_FOUND: "WIN",
+            MESSAGE_TIME_LIMIT_REACHED: "FAIL",
+            MESSAGE_MAX_STEPS_PERFORMED: "FAIL"}
+
+MESSAGES = {MESSAGE_SOLUTION_FOUND: "SOLUTION FOUND",
+            MESSAGE_TIME_LIMIT_REACHED: "TIME LIMIT REACHED",
+            MESSAGE_MAX_STEPS_PERFORMED: "MAXIMUM NUMBER OF STEPS PERFORMED"}
 
 
 ###############################################################################
@@ -194,12 +228,30 @@ def colored_print(text, color, background_color, end=""):
     else:
         print(text)
 
+def get_search_algorithm_results(search_algo_name, node_env, metrics, message):
+    return {
+        "algorithm": search_algo_name,
+        "message": message,
+        "outcome": OUTCOMES[message],
+        "node_env": None,
+        "steps": len(node_env.action_trajectory),
+        "trajectory": node_env.print_actions_as_chars(node_env.action_trajectory),
+        "discovered": metrics['no_of_nodes_discovered'],
+        "repeated": metrics['no_of_nodes_repeated'],
+        "explored": len(metrics['nodes_explored']),
+        "time": round(metrics['time'], 3)
+    }
 
-def print_search_algorithm_results(search_algo_name, node_env, metrics, message):
-    print("------------------------------------------------------------------------------------\n" +
-          f"{search_algo_name}(): {message}! Got {len(node_env.action_trajectory)} steps\n" +
-          f"trajectory: {node_env.print_actions_as_chars(node_env.action_trajectory)}\n" +
-          f"discovered: {metrics['no_of_nodes_discovered']}\n" +
-          f"repeated:   {metrics['no_of_nodes_repeated']}\n" +
-          f"{len(metrics['nodes_explored'])}\n" +
-          f"time:       {round(metrics['time'], 3)} s")
+def print_search_algorithm_results(results):
+    print(80*"-" + "\n" +
+          f"{results['algorithm']}(): {results['message']}!\n" +
+          f"outcome:    {results['outcome']}\n" +
+          f"steps:      {results['steps']}\n" +
+          f"trajectory: {results['trajectory']}\n" +
+          f"discovered: {results['discovered']}\n" +
+          f"repeated:   {results['repeated']}\n" +
+          f"explored:   {results['explored']}\n" +
+          f"dim_room:   {(results['dim_room'], results['dim_room'])}\n" +
+          f"num_boxes:  {results['num_boxes']}\n" +
+          f"seed:       {results['seed']}\n" +
+          f"time:       {results['time']} s")

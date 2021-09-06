@@ -1,5 +1,6 @@
 import argparse
 import sys
+import json
 
 from algorithms.mcts import Mcts
 from src.algorithms import depth_first_search as dfs
@@ -9,16 +10,24 @@ from src.algorithms import a_star_search as astar
 from src.algorithms import ida_star_search as idastar
 from gym_sokoban.envs.sokoban_env import *
 from time import time, sleep
-from utils import SIMULATION_POLICIES, SEARCH_ALGORITHMS, HEURISTICS
+from utils import SIMULATION_POLICIES, SEARCH_ALGORITHMS, HEURISTICS, \
+    ALGORITHM_NAME_DFS, ALGORITHM_NAME_BFS, ALGORITHM_NAME_UCS, \
+    ALGORITHM_NAME_A_STAR, ALGORITHM_NAME_IDA_STAR, ALGORITHM_NAME_MCTS
 
 
 sys.path.append('my/path/to/module/folder')
 
+# Path to the results of the experiments.
+PATH = "../experimental_results"
+
 LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 
 RANDOM_SEED = 10
-DIM_ROOM = 7
+DIM_ROOM = 8
 NUM_BOXES = 1
+
+# Set of levels to solve by different random seed values.
+LEVELS_TO_SOLVE = list(map(str, np.arange(1, 21, 1)))
 
 # ================================================================
 # def _run():
@@ -167,7 +176,7 @@ def create_environment(args):
                    dim_room=(args.dim_room, args.dim_room),
                    max_steps=args.max_steps,
                    num_boxes=args.num_boxes)
-    make_reproducible(env, args.random_seed)
+    make_reproducible(env, args.seeds)
 
     return env
 
@@ -178,32 +187,51 @@ def search_algorithms_solve(args):
     env = create_environment(args)
     env.render_colored()
 
-    time_limit, metrics = arguments.time_limit * 60, None
+    time_limit, results = arguments.time_limit * 60, None
     if args.search_algo in SEARCH_ALGORITHMS:
-        if args.search_algo == "dfs":
-            metrics, _ = dfs(env, time_limit, print_steps=True)
-        elif args.search_algo == "bfs":
-            metrics, _ = bfs(env, time_limit, print_steps=True)
-        elif args.search_algo == "ucs":
-            metrics, _ = ucs(env, time_limit, print_steps=True)
-        elif args.search_algo == "astar":
-            metrics, _ = astar(env, time_limit, print_steps=True)
-        elif args.search_algo == "idastar":
-            metrics, _ = idastar(env, time_limit, print_steps=True,
+        if args.search_algo == ALGORITHM_NAME_DFS:
+            results = dfs(env, time_limit, print_steps=False)
+        elif args.search_algo == ALGORITHM_NAME_BFS:
+            results = bfs(env, time_limit, print_steps=False)
+        elif args.search_algo == ALGORITHM_NAME_UCS:
+            results = ucs(env, time_limit, print_steps=False)
+        elif args.search_algo == ALGORITHM_NAME_A_STAR:
+            results = astar(env, time_limit, print_steps=False)
+        elif args.search_algo == ALGORITHM_NAME_IDA_STAR:
+            results = idastar(env, time_limit, print_steps=False,
                                  heuristic=args.heuristic)
     else:
         raise Exception(f"Algorithm `{args.search_algo}` is not in the list of"
-                        f" available algorithms"
-                        f" [`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
+                        f" available algorithms: "
+                        f"[`{ALGORITHM_NAME_DFS}`, "
+                        f"`{ALGORITHM_NAME_BFS}`, "
+                        f"`{ALGORITHM_NAME_UCS}`, "
+                        f"`{ALGORITHM_NAME_A_STAR}`, "
+                        f"`{ALGORITHM_NAME_IDA_STAR}`]")
 
-    if args.render_env == "T":
+    results['dim_room'] = args.dim_room
+    results['num_boxes'] = args.num_boxes
+    results['seed'] = args.seeds
+
+    if args.print_results and results:
+        print_search_algorithm_results(results)
+
+    if args.render_env:
         env.render()
-        for a in metrics["action_traj"]:
+        for a in results['traj']:
             sleep(0.5)
             env.step(CHARS_LOOKUP_ACTIONS[a])
             env.render()
         env.sleep(60)
 
+    if args.write_to_file:
+        orig_stdout = sys.stdout
+        with open(f"{PATH}/{results['algorithm']}_results.txt", 'a') as file:
+            # file.write(json.dumps(results)) # in case of json
+            sys.stdout = file
+            print_search_algorithm_results(results)
+            sys.stdout = orig_stdout
+            file.close()
 
 def mcts_solve(args):
 
@@ -253,12 +281,27 @@ def mcts_solve(args):
     mcts.root.print_tree()
 
 
+def solve_game(argus):
+    """
+    Try to solve Sokoban using different methods.
+
+    Args:
+        argus (Namespace): Arguments which describe necessary parameters.
+    """
+    if argus.search_algo:
+        search_algorithms_solve(argus)
+    else:
+        mcts_solve(argus)
+
+
 if __name__ == "__main__":
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--random_seed", type=np.int, default=RANDOM_SEED,
-                        help="Seed to handle the rendered board")
+    parser.add_argument("--seeds", type=np.int, default=LEVELS_TO_SOLVE,
+                        nargs='+',
+                        help="Seed(s) to handle the rendered board. "
+                             "Multiple seeds are splitted by a space.")
     parser.add_argument("--dim_room", type=np.int, default=DIM_ROOM,
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
@@ -276,25 +319,37 @@ if __name__ == "__main__":
                         default=SIMULATION_POLICIES["random"],
                         help="Simulation policy. "
                              "Implemented options: "
-                             "[`random`, `eps-greedy`]")
+                             f"[`{SIMULATION_POLICIES['random']}`, "
+                             f"`{SIMULATION_POLICIES['eps-greedy']}`]")
     parser.add_argument("--search_algo", type=np.str,
-                        default="",#SEARCH_ALGORITHMS["idastar"],
+                        default=SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR],
                         help="Alternative search algorithm to solve the game. "
                              "Implemented options: "
-                             "[`dfs`, `bfs`, `ucs`, `astar`, `idastar`]")
+                            f"[`{SEARCH_ALGORITHMS[ALGORITHM_NAME_DFS]}`, "
+                            f"`{SEARCH_ALGORITHMS[ALGORITHM_NAME_BFS]}`, "
+                            f"`{SEARCH_ALGORITHMS[ALGORITHM_NAME_UCS]}`, "
+                            f"`{SEARCH_ALGORITHMS[ALGORITHM_NAME_A_STAR]}`, "
+                            f"`{SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR]}`]")
     parser.add_argument("--heuristic", type=np.str,
                         default=HEURISTICS["hungarian"],
                         help="Heuristic method for IDA* search algorithm. "
                              "Implemented options: "
-                             "[`manhattan`, `hungarian`]")
+                             f"[`{HEURISTICS['manhattan']}`, "
+                             f"`{HEURISTICS['hungarian']}`]")
     parser.add_argument("--time_limit", type=np.int, default=60,
                         help="Time (in minutes) per board")
-    parser.add_argument("--render_env", type=np.str, default="F",
-                        help="If the result should be rendered `T` or not `F`")
+    parser.add_argument("--render_env", type=np.bool, default=False,
+                        help="If the result environment should be rendered.")
+    parser.add_argument("--print_results", type=np.bool, default=True,
+                        help="If the result metrics should be printed.")
+    parser.add_argument("--write_to_file", type=np.bool, default=True,
+                        help="If the results should be written to a file.")
     arguments = parser.parse_args()
 
     # Solve the game.
-    if arguments.search_algo:
-        search_algorithms_solve(arguments)
-    else:
-        mcts_solve(arguments)
+    for seed in arguments.seeds:
+        print(f"\n\nseed={seed}")
+        arguments.seeds = int(seed)
+        solve_game(arguments)
+
+

@@ -1,6 +1,8 @@
 from copy import deepcopy
 from time import time
-from src.utils import print_search_algorithm_results
+from src.utils import get_search_algorithm_results, \
+    MESSAGE_SOLUTION_FOUND, MESSAGE_TIME_LIMIT_REACHED, ALGORITHM_NAME_BFS, \
+    METRICS_SCELETON
 
 
 def breadth_first_search(env, time_limit: int, metrics: dict=None, print_steps: bool=None):
@@ -27,17 +29,7 @@ def breadth_first_search(env, time_limit: int, metrics: dict=None, print_steps: 
     current_time = 0
 
     if not metrics:
-        metrics = {
-            'no_of_nodes_discovered': 0,  # The total number of discovered
-                                          # nodes. Including repeated ones.
-            'no_of_nodes_repeated': 0,  # The number of a times nodes got
-                                        # discovered repeatedly.
-            'nodes_explored': set(),  # The set of all discovered nodes
-                                      # excluding duplications.
-            'environemnts': set(),  # This saves the environment of the nodes.
-            'action_traj': [],  # The trajectory of action taken.
-            'time': 0  # The time it took until the current node.
-        }
+        metrics = METRICS_SCELETON
 
     if env.is_done():
         return metrics, env
@@ -49,22 +41,21 @@ def breadth_first_search(env, time_limit: int, metrics: dict=None, print_steps: 
 
         if not env_queue:
             print(metrics)
-            raise Exception('depth_first_search(): Solution NOT FOUND! Empty environment queue.')
+            raise Exception(f"{ALGORITHM_NAME_BFS}(): Solution NOT FOUND!"
+                            f"Empty environment queue.")
 
         node_env = env_queue.pop(0)
         metrics['nodes_explored'].add(tuple(node_env.room_state.flatten()))
 
         if current_time >= time_limit:
-            print_search_algorithm_results("breadth_first_search",
-                                           node_env, metrics,
-                                           "TIME LIMIT EXCEED")
-            return metrics, None
+            return get_search_algorithm_results(ALGORITHM_NAME_BFS,
+                                                node_env, metrics,
+                                                MESSAGE_TIME_LIMIT_REACHED)
 
         if node_env.all_boxes_on_target():
-            print_search_algorithm_results("breadth_first_search",
-                                           node_env, metrics,
-                                           "SOLUTION FOUND")
-            return metrics, node_env
+            return get_search_algorithm_results(ALGORITHM_NAME_BFS,
+                                                node_env, metrics,
+                                                MESSAGE_SOLUTION_FOUND)
 
         if node_env.max_steps_reached():
             print("Maximal number of steps reached!")

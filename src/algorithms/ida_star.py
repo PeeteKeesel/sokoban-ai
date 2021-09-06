@@ -1,4 +1,6 @@
-from utils import print_search_algorithm_results, HEURISTICS
+from utils import get_search_algorithm_results, HEURISTICS, \
+    MESSAGE_SOLUTION_FOUND, MESSAGE_TIME_LIMIT_REACHED, ALGORITHM_NAME_IDA_STAR, \
+    METRICS_SCELETON
 from time import time
 import sys
 
@@ -74,17 +76,7 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
     current_time = 0
 
     if not metrics:
-        metrics = {
-            'no_of_nodes_discovered': 0,  # The total number of discovered
-                                          # nodes. Including repeated ones.
-            'no_of_nodes_repeated': 0,  # The number of a times nodes got
-                                        # discovered repeatedly.
-            'nodes_explored': set(),  # The set of all discovered nodes
-                                      # excluding duplications.
-            'environemnts': set(),  # This saves the environment of the nodes.
-            'action_traj': [],  # The trajectory of action taken.
-            'time': 0  # The time it took until the current node.
-        }
+        metrics = METRICS_SCELETON
 
     if env.is_done():
         return metrics, env
@@ -108,7 +100,7 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
         start_time = time()
 
         pathLimit = pathLimit + 1
-        print(f"current pathLimit: {pathLimit}")
+        #print(f"current pathLimit: {pathLimit}")
 
         # Set the cost to travel from root to node n.
         env.g_value = 0
@@ -124,22 +116,20 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
             metrics['action_traj'] = currentState.get_actions_lookup_chars(
                 currentState.action_trajectory
             )
-            print(f"currentState  {currentState.print_actions_as_chars(currentState.action_trajectory)}")
-            currentState.render_colored()
+            #print(f"currentState  {currentState.print_actions_as_chars(currentState.action_trajectory)}")
+            #currentState.render_colored()
 
             # Time limit reached.
             if current_time >= time_limit:
-                print_search_algorithm_results("ida_star_search",
-                                               currentState, metrics,
-                                               "TIME LIMIT EXCEED")
-                return metrics, None
+                return get_search_algorithm_results(ALGORITHM_NAME_IDA_STAR,
+                                                    currentState, metrics,
+                                                    MESSAGE_TIME_LIMIT_REACHED)
 
             # Solution found.
             if currentState.all_boxes_on_target():
-                print_search_algorithm_results("ida_star_search",
-                                               currentState, metrics,
-                                               "SOLUTION FOUND")
-                return metrics, currentState
+                return get_search_algorithm_results(ALGORITHM_NAME_IDA_STAR,
+                                                    currentState, metrics,
+                                                    MESSAGE_SOLUTION_FOUND)
 
             nodes += 1
             metrics['no_of_nodes_discovered'] += 1
@@ -158,11 +148,11 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
             # print(5*" "+f"   currentState.f_value = {currentState.f_value} ? {pathLimit} = pathLimit")
             if currentState.f_value <= pathLimit:
                 closedSet.insert(0, currentState)
-                print(10*" "+"children")
+                #print(10*" "+"children")
                 # Update successor states' f and g values and add to open set
                 # if it is not already in the closed set or has been generated.
                 for child in currentState.get_children_environments():
-                    child.render_colored()
+                    #child.render_colored()
                     # test if node has been "closed"
                     if is_closed(closedSet, child):
                         #print(15*" "+"is closed")
