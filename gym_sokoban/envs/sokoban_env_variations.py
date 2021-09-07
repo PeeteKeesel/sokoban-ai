@@ -336,5 +336,5 @@ class MCTS_Sokoban_Env(MctsSokobanEnv):
         'render.modes': ['human', 'rgb_array', 'tiny_human', 'tiny_rgb_array'],
     }
 
-    def __init__(self, dim_room, num_boxes, max_steps=120):
-        super(MCTS_Sokoban_Env, self).__init__(dim_room, num_boxes, max_steps)
+    def __init__(self, dim_room, num_boxes, max_steps=120, original_map=None):
+        super(MCTS_Sokoban_Env, self).__init__(dim_room, num_boxes, max_steps, original_map)

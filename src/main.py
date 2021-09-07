@@ -2,6 +2,7 @@ import argparse
 import sys
 import json
 
+from pathlib import Path
 from algorithms.mcts import Mcts
 from src.algorithms import depth_first_search as dfs
 from src.algorithms import breadth_first_search as bfs
@@ -24,10 +25,12 @@ LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 
 RANDOM_SEED = 10
 DIM_ROOM = 8
-NUM_BOXES = 1
+NUM_BOXES = 3
 
 # Set of levels to solve by different random seed values.
 LEVELS_TO_SOLVE = list(map(str, np.arange(1, 21, 1)))
+PATH_TO_TEST_BOARDS = "../boards/"
+TEST_BOARDS = [PATH_TO_TEST_BOARDS + "test_board_8x8_3"]
 
 # ================================================================
 # def _run():
@@ -172,11 +175,22 @@ def create_environment(args):
     Returns:
         env (MctsSokobanEnv): The Sokoban environment.
     """
-    env = gym.make("MCTS-Sokoban-v0",
-                   dim_room=(args.dim_room, args.dim_room),
-                   max_steps=args.max_steps,
-                   num_boxes=args.num_boxes)
-    make_reproducible(env, args.seeds)
+    env = None
+    if args.file_name:
+        dim_room, n_boxes, soko_map = parse(filename=args.file_name)
+        env = gym.make("MCTS-Sokoban-v0",
+                       dim_room=dim_room,
+                       max_steps=args.max_steps,
+                       num_boxes=n_boxes,
+                       original_map=soko_map)
+    else:
+        env = gym.make("MCTS-Sokoban-v0",
+                       dim_room=(args.dim_room, args.dim_room),
+                       max_steps=args.max_steps,
+                       num_boxes=args.num_boxes)
+        make_reproducible(env, args.seeds)
+
+    env.render_colored()
 
     return env
 
@@ -237,6 +251,7 @@ def mcts_solve(args):
 
     # Create the environment.
     env = create_environment(args)
+    env.render_colored()
 
     # Initialize the Monte-Carlo-Tree-Search.
     mcts = Mcts(Env=env,
@@ -294,11 +309,30 @@ def solve_game(argus):
         mcts_solve(argus)
 
 
+def read_input_boards_and_solve(input_args):
+    if input_args.file_name:
+        for file in input_args.file_name:
+            input_args.file_name = Path(file)
+            print(f"input_args.file_name={input_args.file_name}")
+            solve_game(input_args)
+    elif input_args.folder_name:
+        for file in Path(input_args.folder_name).iterdir():
+            input_args.file_name = file
+            solve_game(input_args)
+    else:
+        solve_game(input_args)
+
+
 if __name__ == "__main__":
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seeds", type=np.int, default=LEVELS_TO_SOLVE,
+    parser.add_argument("--file_name", type=np.str, default=TEST_BOARDS,
+                        nargs="+",
+                        help="Name of file(s) to read Sokoban boards from.")
+    parser.add_argument("--folder_name", type=np.str, default="",
+                        help="Name of a folder in which Sokoban boards are.")
+    parser.add_argument("--seeds", type=np.str, default=LEVELS_TO_SOLVE,
                         nargs='+',
                         help="Seed(s) to handle the rendered board. "
                              "Multiple seeds are splitted by a space.")
@@ -308,7 +342,7 @@ if __name__ == "__main__":
                         help="Number of boxes on the board")
     parser.add_argument("--max_rollouts", type=np.int, default=100,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=10,
+    parser.add_argument("--max_depth", type=np.int, default=30,
                         help="Depth of each rollout (simulation)")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")
@@ -322,7 +356,7 @@ if __name__ == "__main__":
                              f"[`{SIMULATION_POLICIES['random']}`, "
                              f"`{SIMULATION_POLICIES['eps-greedy']}`]")
     parser.add_argument("--search_algo", type=np.str,
-                        default=SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR],
+                        default="",#SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR],
                         help="Alternative search algorithm to solve the game. "
                              "Implemented options: "
                             f"[`{SEARCH_ALGORITHMS[ALGORITHM_NAME_DFS]}`, "
@@ -350,6 +384,6 @@ if __name__ == "__main__":
     for seed in arguments.seeds:
         print(f"\n\nseed={seed}")
         arguments.seeds = int(seed)
-        solve_game(arguments)
+        read_input_boards_and_solve(arguments)
 
 

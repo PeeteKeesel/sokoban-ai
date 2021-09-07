@@ -255,3 +255,95 @@ def print_search_algorithm_results(results):
           f"num_boxes:  {results['num_boxes']}\n" +
           f"seed:       {results['seed']}\n" +
           f"time:       {results['time']} s")
+
+###############################################################################
+# Parse the Sokoban environment from a file.
+###############################################################################
+
+def read_sokoban_input(filename):
+    """
+    This reads a file containing a information about a Sokoban map and returns
+    sets of tuples containing the size of the board, positions of walls, boxes,
+    and goals as well as the player position.
+
+    Args:
+        filename (str): Name of the file to read the information from.
+
+    Returns:
+        (size, walls, boxes, storages, start):
+            size (tuple): Dimension of the Sokoban room.
+
+            walls (set): Set of tuples of the wall positions.
+
+            boxes (set): Set of tuples of the box positions.
+
+            storages (set): Set of tuples of the goal positions for the boxes.
+
+            start (tuple): Starting position of the player.
+    """
+    with open(filename, 'r') as f:
+        # read size
+        line = f.readline()
+        inputs = line.split()
+        print(inputs)
+        size = (int(inputs[0]), int(inputs[1]))
+
+        # read walls
+        line = f.readline()
+        inputs = line.split()
+        inputs.pop(0)
+        walls = set()
+        for i in range(0, len(inputs), 2):
+            walls.add((int(inputs[i]), int(inputs[i+1])))
+
+        # read boxes
+        line = f.readline()
+        inputs = line.split()
+        inputs.pop(0)
+        boxes = set()
+        for i in range(0, len(inputs), 2):
+            boxes.add((int(inputs[i]), int(inputs[i + 1])))
+
+        # read storages
+        line = f.readline()
+        inputs = line.split()
+        inputs.pop(0)
+        storages = set()
+        for i in range(0, len(inputs), 2):
+            storages.add((int(inputs[i]), int(inputs[i + 1])))
+
+        # read start position
+        line = f.readline()
+        inputs = line.split()
+        start = (int(inputs[0]), int(inputs[1]))
+
+    return size, walls, boxes, storages, start
+
+# @param filename: name of file containing sokoban input
+# @return (rows, cols): 2-tuple containing rows and columns of sokoban board
+# @return len(boxes): number of boxes in the board
+# @return map: 2d list containing the board with
+#  '#' for walls, '$' for boxes, '.' for storages, '@' for player, and ' ' for empty spaces
+# parse sokoban input and return the dimensions of board, number of boxes, and map
+def parse(filename):
+    size, walls, boxes, targets, start = read_sokoban_input(filename=filename)
+    print(f"size= {size}\n"
+          f"walls={walls}\n"
+          f"boxes={boxes}\n"
+          f"targets={targets}\n"
+          f"start={start}")
+    cols, rows = size
+    mapping_file_to_board = [[""]*cols for i in range(rows)]
+    for row in range(1, rows+1):
+        for col in range(1, cols+1):
+            if (row, col) in walls:
+                mapping_file_to_board[row-1][col-1] = "#"
+            elif (row, col) in boxes:
+                mapping_file_to_board[row-1][col-1] = "$"
+            elif (row, col) in targets:
+                mapping_file_to_board[row-1][col-1] = "."
+            elif (row, col) == start:
+                mapping_file_to_board[row-1][col-1] = "@"
+            else:
+                mapping_file_to_board[row-1][col-1] = " "
+    return (rows, cols), len(boxes), mapping_file_to_board

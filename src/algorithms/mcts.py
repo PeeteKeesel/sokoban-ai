@@ -5,6 +5,7 @@ https://github.com/tensorflow/minigo/blob/master/mcts.py
 import numpy as np
 import collections
 import math
+import sys
 
 from copy import deepcopy
 from utils import SIMULATION_POLICIES
@@ -95,6 +96,9 @@ class MctsNode:
         PUCT algorithm from
         (http://gauss.ececs.uc.edu/Workshops/isaim2010/papers/rosin.pdf)
         """
+        print(f"child_P = {self.child_P}")
+        print(f"child_N = {self.child_N}")
+        print(f"N = {self.N}")
         return (c_PUCT * self.child_P * math.sqrt(1 + self.N) /
                 (1 + self.child_N))
 
@@ -134,7 +138,7 @@ class MctsNode:
     def uct(self):
         if np.all(self.child_N == 0):
             return np.repeat(np.PINF, self.n_actions)
-        return self.child_Q / self.child_N\
+        return self.child_Q / self.child_N \
                + C * np.sqrt(2 * np.log(self.N) /
                              self.child_N)
 
@@ -207,7 +211,7 @@ class MctsNode:
                     print(f"current.   uct[{feasible_actions}]= {current.uct[feasible_actions]}")
                     print(f"current.cAscor[{feasible_actions}]= {current.child_action_score[feasible_actions]}")
                     max_action_idx = np.nanargmax(
-                        current.sp_uct[feasible_actions]
+                        current.uct[feasible_actions] # TODO: change to sp_uct
                     )
                     max_action = feasible_actions[max_action_idx]
                     print(current.Env.render_colored())
@@ -253,7 +257,10 @@ class MctsNode:
 
     def revert_visits(self, up_to):
         """Undo the addition of visit counts."""
-        self.N -= 1 
+        self.N -= 1
+        if self.N < 0:
+            print(self.room_state)
+            sys.exit(4)
         if self.parent is None or self is up_to: 
             return 
         self.parent.revert_visits(up_to)
@@ -644,6 +651,7 @@ class MctsNode:
                 f"\n      * score={np.around(self.child_action_score, 3)}" + \
                 f"\n      * sp_uct={np.around(self.sp_uct, 3)}" + \
                 f"\n      * uct={np.around(self.uct, 3)}"
+
         print(node)
         for _, child in sorted(self.children.items()):
             child.print_tree(depth+1)
@@ -1018,8 +1026,8 @@ class Mcts:
               21*" " + len(str(rollouts))*" " + f"and    uct: {mcts_copy.root.uct}\n" +
               21*" " + len(str(rollouts))*" " + f"C=0 sp_uct: {temp}\n")
         # For the last action set C=0
-        best_child = np.nanargmax(mcts_copy.root.sp_uct -
-                                  mcts_copy.root.sp_uct_second_term)
+        # best_child = np.nanargmax(mcts_copy.root.sp_uct -
+        #                           mcts_copy.root.sp_uct_second_term)
         best_child = np.nanargmax(mcts_copy.root.uct)
         mcts_copy.root.print_tree()
         print(f"best_child={best_child}")

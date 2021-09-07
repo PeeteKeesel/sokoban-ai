@@ -1,9 +1,9 @@
-from copy         import deepcopy
+from copy import deepcopy
 from .sokoban_env import SokobanEnv
-from src.utils    import *
-from typing       import List
-
-import numpy as np
+from .render_utils import room_to_rgb
+from .room_utils import generate_room
+from src.utils import *
+from typing import List
 
 
 class MctsSokobanEnv(SokobanEnv):
@@ -11,9 +11,104 @@ class MctsSokobanEnv(SokobanEnv):
     Extension of the SokobanEnv class containing methods specifically for MCTS.
     """
 
-    def __init__(self, dim_room, num_boxes, max_steps=100):
-
+    def __init__(self, dim_room, num_boxes, max_steps=100, original_map = None):
+        self.original_map = None
+        if original_map:
+            self.original_map = original_map
+        print("HALLO")
         super(MctsSokobanEnv, self).__init__(dim_room, max_steps, num_boxes, None)
+
+    def reset(self, second_player=False, render_mode='rgb_array'):
+        # A manual board was given from the user.
+        if self.original_map:
+            self.room_fixed, self.room_state, self.box_mapping = \
+                self.generate_room_from_manual_map(
+                    self.original_map
+                )
+
+            self.player_position = np.argwhere(self.room_state == 5)[0]
+            self.num_env_steps = 0
+            self.reward_last = 0
+            self.no_boxes_on_target = 0
+            starting_observation = room_to_rgb(self.room_state, self.room_fixed)
+            self.backup_env_states()
+
+            return starting_observation
+        # A board will be rendered.
+        else:
+            try:
+                self.room_fixed, self.room_state, self.box_mapping = generate_room(
+                    dim=self.dim_room,
+                    num_steps=self.num_gen_steps,
+                    num_boxes=self.num_boxes,
+                    second_player=second_player
+                )
+            except (RuntimeError, RuntimeWarning) as e:
+                print("[SOKOBAN] Runtime Error/Warning: {}".format(e))
+                print("[SOKOBAN] Retry . . .")
+                return self.reset(second_player=second_player, render_mode=render_mode)
+
+            self.player_position = np.argwhere(self.room_state == 5)[0]
+            self.num_env_steps = 0
+            self.reward_last = 0
+            self.no_boxes_on_target = 0
+
+            starting_observation = self.render(render_mode)
+            return starting_observation
+
+    def generate_room_from_manual_map(self, select_map):
+        room_fixed = []
+        room_state = []
+
+        targets = []
+        boxes = []
+        for row in select_map:
+            room_f = []
+            room_s = []
+
+            for e in row:
+                # wall
+                if e == '#':
+                    room_f.append(0)
+                    room_s.append(0)
+
+                # player position
+                elif e == '@':
+                    self.player_position = np.array([len(room_fixed), len(room_f)])
+                    room_f.append(1)
+                    room_s.append(5)
+
+                # box
+                elif e == '$':
+                    boxes.append((len(room_fixed), len(room_f)))
+                    room_f.append(1)
+                    room_s.append(4)
+                # storage
+                elif e == '.':
+                    targets.append((len(room_fixed), len(room_f)))
+                    room_f.append(2)
+                    room_s.append(2)
+
+                # empty space
+                else:
+                    room_f.append(1)
+                    room_s.append(1)
+
+            room_fixed.append(room_f)
+            room_state.append(room_s)
+
+
+        # used for replay in room generation, unused here because pre-generated levels
+        box_mapping = {}
+
+        return np.array(room_fixed), np.array(room_state), box_mapping
+
+    def backup_env_states(self):
+        self.reward_last_backup = self.reward_last
+        self.no_boxes_on_target_backup = self.no_boxes_on_target
+        self.num_env_steps_backup = self.num_env_steps
+        self.player_position_backup = self.player_position.copy()
+        self.room_state_backup = self.room_state.copy()
 
     def get_room_state(self):
         return self.room_state.copy()
@@ -211,8 +306,6 @@ class MctsSokobanEnv(SokobanEnv):
 
         envAfterAction = deepcopy(self)
         _, rew, _, _ = envAfterAction.step(action=actionToTake)
-        # envAfterAction.render_colored()
-        # print(envAfterAction.is_deadlock())
 
         if envAfterAction.is_deadlock() and \
                 np.abs(envAfterAction.reward_last - self.reward_last) < envAfterAction.reward_box_on_target:
