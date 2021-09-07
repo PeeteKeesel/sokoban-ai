@@ -15,10 +15,15 @@ class MctsSokobanEnv(SokobanEnv):
         self.original_map = None
         if original_map:
             self.original_map = original_map
-        print("HALLO")
         super(MctsSokobanEnv, self).__init__(dim_room, max_steps, num_boxes, None)
 
     def reset(self, second_player=False, render_mode='rgb_array'):
+        """
+        Resets the environment. Depending on if an {@original_map} is given,
+        which is the case when the board is read from a file or a folder of
+        files, the resetting happens differently.
+        """
+
         # A manual board was given from the user.
         if self.original_map:
             self.room_fixed, self.room_state, self.box_mapping = \
