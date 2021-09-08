@@ -113,6 +113,15 @@ CHARS_LOOKUP_ACTIONS = {
     'R': 4
 }
 
+REVERSE_ACTION = {
+    1: 2,
+    2: 1,
+    3: 4,
+    4: 3
+}
+
+LEGAL_ACTIONS = [1, 2, 3, 4]
+
 # Moves are mapped to coordinate changes as follows
 CHANGE_COORDINATES = {
     0: (-1, 0), # 0: Move up
@@ -204,6 +213,18 @@ def manhattan_distance(pos1, pos2):
     """
     assert len(pos1) == len(pos2) == 2
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+
+def reverse_action(prev_action):
+    """
+    Returns the reverse action of the given {@prev_action}.
+    The reverse action for Up would be Down and vice versa. Analogously the
+    reverse action for Right would be left and vice versa.
+
+    Args:
+        prev_action (int): An action.
+    """
+    assert prev_action in LEGAL_ACTIONS
+    return REVERSE_ACTION[prev_action]
 
 def convert_room_state_to_output_format(mat):
     for key, value in LEVEL_FORMAT.items():

@@ -23,7 +23,7 @@ PATH = "../experimental_results"
 
 LEGAL_ACTIONS = np.array([1, 2, 3, 4])
 
-RANDOM_SEED = 10
+RANDOM_SEED = [1]
 DIM_ROOM = 8
 NUM_BOXES = 3
 
@@ -188,8 +188,8 @@ def create_environment(args):
                        dim_room=(args.dim_room, args.dim_room),
                        max_steps=args.max_steps,
                        num_boxes=args.num_boxes)
-        make_reproducible(env, args.seeds)
 
+    make_reproducible(env, args.seeds)
     env.render_colored()
 
     return env
@@ -263,8 +263,9 @@ def mcts_solve(args):
 
     # Must run this once at the start, so that noise injection actually affects
     # the first action of the episode.
-    first_node = mcts.root.select_and_expand()
-    first_node.backpropagate(0, mcts.root)
+    # first_node, _ = mcts.root.select_and_expand()
+    # first_node.backpropagate(0, mcts.root)
+    # first_node.N -= 1
 
     time_limit = arguments.time_limit * 60
     start_time = time()
@@ -276,10 +277,16 @@ def mcts_solve(args):
             print(f"Time limit of {args.time_limit} reached.")
             break
 
+        #env.render(mode=args.render_mode)
+
         # Run the Monte-Carlo-Tree-Search for the current state and take the
         # best action after all simulations were performed.
         _, reward, done, _, best_action = mcts.take_best_action()
-        print(f"MAIN: reward={reward}")
+        print(100* "--")
+        print(100 * "--")
+        print(100 * "--")
+        print(100 * "--")
+        print(f"MAIN: MCTS choose action={best_action} and got reward={reward}.")
         a_traj.append(best_action)
 
         if done:
@@ -292,6 +299,10 @@ def mcts_solve(args):
                   f"      trajectory  : {mcts.Env.print_actions_as_chars(a_traj)}\n"
                   f"      total reward: {reward}")
             break
+
+    # env.render(mode=args.render_mode)
+    # sleep(30)
+    # env.close()
 
     mcts.root.print_tree()
 
@@ -327,20 +338,22 @@ if __name__ == "__main__":
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_name", type=np.str, default=TEST_BOARDS,
+    parser.add_argument("--file_name", type=np.str, default="", #TEST_BOARDS,
                         nargs="+",
                         help="Name of file(s) to read Sokoban boards from.")
     parser.add_argument("--folder_name", type=np.str, default="",
                         help="Name of a folder in which Sokoban boards are.")
-    parser.add_argument("--seeds", type=np.str, default=LEVELS_TO_SOLVE,
+    parser.add_argument("--seeds", type=np.str, default=RANDOM_SEED,
                         nargs='+',
                         help="Seed(s) to handle the rendered board. "
                              "Multiple seeds are splitted by a space.")
+    parser.add_argument("--render_mode", default="human",
+                        help="How to observe the game. `human` will render a window.")
     parser.add_argument("--dim_room", type=np.int, default=DIM_ROOM,
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=100,
+    parser.add_argument("--max_rollouts", type=np.int, default=300,
                         help="Number of rollouts (simulations) per move")
     parser.add_argument("--max_depth", type=np.int, default=30,
                         help="Depth of each rollout (simulation)")

@@ -35,10 +35,10 @@ class SokobanEnv(gym.Env):
         # Penalties and Rewards
         self.penalty_for_step       = -0.1 # reward for making a step
         self.penalty_box_off_target = -1   # reward for pushing box from target
-        self.reward_box_on_target   = 10   # reward for pushing a box on a target
-        self.reward_finished        = 10_000  # reward for finishing the game
+        self.reward_box_on_target   = 1   # reward for pushing a box on a target
+        self.reward_finished        = 10  # reward for finishing the game
         self.reward_last            = 0    # reward achieved by the previous step
-        self.penalty_already_visited = -5
+        self.penalty_already_visited = 0 #-5
 
         # Other reward types: see 4.2 MCTS configuration
         # self.reward_r0 = 1 if self._check_if_done() else 0
@@ -291,17 +291,17 @@ class SokobanEnv(gym.Env):
 
         for boxPos in boxPositions:
             n  = (boxPos[0] - 1, boxPos[1])
-            nw = (boxPos[0] - 1, boxPos[1] - 1)
+            #nw = (boxPos[0] - 1, boxPos[1] - 1)
             w  = (boxPos[0],     boxPos[1] - 1)
-            sw = (boxPos[0] + 1, boxPos[1] - 1)
+            #sw = (boxPos[0] + 1, boxPos[1] - 1)
             s  = (boxPos[0] + 1, boxPos[1])
-            se = (boxPos[0] + 1, boxPos[1] + 1)
+            #se = (boxPos[0] + 1, boxPos[1] + 1)
             e  = (boxPos[0],     boxPos[1] + 1)
-            ne = (boxPos[0] - 1, boxPos[1] + 1)
-            if (self._is_wall(n) and self._is_wall(nw) and self._is_wall(w)) \
-                or (self._is_wall(w) and self._is_wall(sw) and self._is_wall(s)) \
-                or (self._is_wall(s) and self._is_wall(se) and self._is_wall(e)) \
-                or (self._is_wall(n) and self._is_wall(ne) and self._is_wall(e)):
+            #ne = (boxPos[0] - 1, boxPos[1] + 1)
+            if (self._is_wall(n) and self._is_wall(w)) \
+                or (self._is_wall(w) and self._is_wall(s)) \
+                or (self._is_wall(s) and self._is_wall(e)) \
+                or (self._is_wall(n) and self._is_wall(e)):
                 return True
         return False
 

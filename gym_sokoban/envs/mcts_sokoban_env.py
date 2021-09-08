@@ -279,6 +279,22 @@ class MctsSokobanEnv(SokobanEnv):
         hungarian.calculate(hungarian_table)
         return hungarian.get_total_potential()
 
+    def other_heuristic(self):
+        total = 0
+        arr_goals = (self.room_fixed == 2)
+        arr_boxes = ((self.room_state == 4) + (self.room_state == 3))
+        # find distance between each box and its nearest storage
+        for i in range(len(arr_boxes)):
+            for j in range(len(arr_boxes[i])):
+                if arr_boxes[i][j] == 1: # found a box
+                    min_dist = 9999999
+                    # check every storage
+                    for k in range(len(arr_goals)):
+                        for l in range(len(arr_goals[k])):
+                            if arr_goals[k][l] == 1: # found a storage
+                                min_dist = min(min_dist, abs(i - k) + abs(j - l))
+                    total = total + min_dist
+        return total * self.penalty_for_step
 
     def all_boxes_on_target(self):
         return self._check_if_all_boxes_on_target()
@@ -334,9 +350,17 @@ class MctsSokobanEnv(SokobanEnv):
         feasible_actions = self.get_feasible_actions()
         deadlocks = self.deadlock_detection_multiple(feasible_actions)
         idxsToRemove = []
-        for i, elem in enumerate(feasible_actions):
+        print(self.action_trajectory)
+        for i, a in enumerate(feasible_actions):
+            # The feasible action results in a deadlock.
             if deadlocks[i]:
                 idxsToRemove.append(i)
+            if self.action_trajectory:
+                # The feasible action is the reverse action of the previous action
+                # and thus redundant and no box was pushed in the previous action.
+                if a == reverse_action(self.action_trajectory[-1]) and \
+                        self.old_box_position == self.new_box_position:
+                    idxsToRemove.append(i)
 
         return np.delete(feasible_actions, idxsToRemove)
 
