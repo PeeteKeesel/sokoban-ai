@@ -96,9 +96,8 @@ class MctsNode:
         PUCT algorithm from
         (http://gauss.ececs.uc.edu/Workshops/isaim2010/papers/rosin.pdf)
         """
-        #print(f"child_P = {self.child_P}")
-        print(5*" " + f"child_N = {self.child_N}")
-        print(5*" " + f"N = {self.N}")
+        # print(5*" " + f"child_N = {self.child_N}")
+        # print(5*" " + f"N = {self.N}")
         return (c_PUCT * self.child_P * math.sqrt(1 + self.N) /
                 (1 + self.child_N))
 
@@ -122,9 +121,9 @@ class MctsNode:
         """
         if np.all(self.child_N == 0):
             return np.repeat(np.PINF, self.n_actions)
-        print(f"  W = {self.W}  child_W = {self.child_W}")
-        print(f"                child_N = {self.child_N}")
-        print(f"                uct     = {self.uct}")
+        # print(f"  W = {self.W}  child_W = {self.child_W}")
+        # print(f"                child_N = {self.child_N}")
+        # print(f"                uct     = {self.uct}")
         return self.child_W / self.child_N\
                + C * np.sqrt(2 * np.log(self.N) /
                              self.child_N)\
@@ -186,12 +185,12 @@ class MctsNode:
             #current.N += 1
 
             # Leaf node encountered.
-            if not current.is_expanded or current.game_is_done():
-                print(current.room_state)
+            if not current.is_expanded:
+                #print(current.room_state)
                 break
 
             feasible_actions = current.Env.get_non_deadlock_feasible_actions()
-            print(f"   select_and_expand() feasible_actions={feasible_actions}")
+            #print(f"   select_and_expand() feasible_actions={feasible_actions}")
 
             # Current node is not fully expanded. Expand one random action.
             if len(current.children) < len(feasible_actions):
@@ -199,7 +198,7 @@ class MctsNode:
 
             # Current node has no feasible actions to take.
             elif len(feasible_actions) == 0:
-                print("No feasible action from here!")
+                #print("No feasible action from here!")
                 return current, -self.Env.reward_finished - self.Env.reward_box_on_target
 
             # Current node is fully extended with its feasible actions.
@@ -208,20 +207,20 @@ class MctsNode:
                 if np.all(np.isposinf(current.sp_uct[feasible_actions])) or \
                     np.all(np.isnan(current.sp_uct[feasible_actions])):
                     rdm_action = np.random.choice(feasible_actions)
-                    print(f"rdm_action={rdm_action}")
+                    #print(f"rdm_action={rdm_action}")
                     current = current.maybe_add_child(rdm_action)
                 else:
                     # Choose best child: the action with the highest score.
-                    current.Env.render_colored()
+                    #current.Env.render_colored()
                     #print(f"current.sp_uct[{feasible_actions}]= {current.sp_uct[feasible_actions]}")
-                    print(5*" " + f"current.uct[{feasible_actions}]= {current.uct[feasible_actions]}")
+                    #print(5*" " + f"current.uct[{feasible_actions}]= {current.uct[feasible_actions]}")
                     #print(f"current.cAscor[{feasible_actions}]= {current.child_action_score[feasible_actions]}")
                     max_action_idx = np.nanargmax(
                         current.uct[feasible_actions] # TODO: change to sp_uct
                     )
                     max_action = feasible_actions[max_action_idx]
-                    current.Env.render_colored()
-                    print(5*" " + f"max_action={max_action} feasible_actions={feasible_actions}  max_action_idx={max_action_idx}  uct={current.uct}")
+                    #current.Env.render_colored()
+                    #print(5*" " + f"max_action={max_action} feasible_actions={feasible_actions}  max_action_idx={max_action_idx}  uct={current.uct}")
                     current = current.maybe_add_child(max_action)
 
         if current.game_is_done():
@@ -242,12 +241,11 @@ class MctsNode:
             (MctsNode): The expanded MctsNode object.
         """
         untried_actions = set(actions) - set([child for child in self.children])
-
         random_action = np.random.choice(tuple(untried_actions))
         added_child = self.maybe_add_child(random_action)
-        print(f"  expand() untried_actions = {tuple(untried_actions)}\n"
-              f"           added_child     = {random_action}\n"
-              f"           reward_last     = {added_child.Env.reward_last}")
+        # print(f"  expand() untried_actions = {tuple(untried_actions)}\n"
+        #       f"           added_child     = {random_action}\n"
+        #       f"           reward_last     = {added_child.Env.reward_last}")
         return added_child, added_child.Env.reward_last
 
     def maybe_add_child(self, action):
@@ -259,7 +257,7 @@ class MctsNode:
             child node after taking {@action}
         """
         if action not in self.children:
-            print(f"action={action} not in self.children= {self.children}")
+            #print(f"action={action} not in self.children= {self.children}")
             new_env = deepcopy(self.Env)
             new_env.step(action)
             self.children[action] = MctsNode(
@@ -272,10 +270,10 @@ class MctsNode:
     def revert_visits(self, up_to):
         """Undo the addition of visit counts."""
         self.N -= 1
-        print(f"self.revert_visits()  {self.N}")
-        if self.N < 0:
-            print(self.room_state)
-            sys.exit(4)
+        #print(f"self.revert_visits()  {self.N}")
+        # if self.N < 0:
+        #     #print(self.room_state)
+        #     sys.exit(4)
         if self.parent is None or self is up_to: 
             return 
         self.parent.revert_visits(up_to)
@@ -308,18 +306,19 @@ class MctsNode:
         # Perform a rollout.
         tot_return_of_sim = prev_reward
         act_traj_sim, depth = [], 0
-        while not leaf.game_is_done() and depth < max_depth_sim:
+        done = leaf.game_is_done()
+        while not done and depth < max_depth_sim:
             # Get a list of all feasible actions, excluding redundant and
             # deadlock actions.
             feasible_actions = leaf.Env.get_non_deadlock_feasible_actions()
-            print(10*" " + f"perform_simulation(): feasible_actions={feasible_actions}")
+            #print(10*" " + f"perform_simulation(): feasible_actions={feasible_actions}")
             if feasible_actions.size == 0:
                 break
 
             sim_action = None
             if sim_policy == SIMULATION_POLICIES["random"]:
                 sim_action = np.random.choice(feasible_actions)
-                print(13 * " " + f"perform_simulation(): taken={sim_action}")
+                #print(13 * " " + f"perform_simulation(): taken={sim_action}")
             elif sim_policy == SIMULATION_POLICIES["eps-greedy"]:
                 if np.random.uniform() < EPS:
                     sim_action = np.random.choice(feasible_actions)
@@ -332,24 +331,24 @@ class MctsNode:
             _, reward_last, done, _ = leaf.Env.step(sim_action)
 
             # Update total reward and return.
-            tot_return_of_sim += GAMMA**depth * reward_last
-            print(30*" " + f"reward_last(a={sim_action}): {round(reward_last, 4)}    tot_return_of_sim: {round(tot_return_of_sim, 4)}")
+            tot_return_of_sim += reward_last #GAMMA**depth * reward_last
+            #print(30*" " + f"reward_last(a={sim_action}): {round(reward_last, 4)}    tot_return_of_sim: {round(tot_return_of_sim, 4)}")
             #tot_reward_of_sim += reward_last
             #leaf.Env.update_total_return(depth, GAMMA)
             #assert tot_return_of_sim == leaf.Env.total_return
 
             depth += 1
 
-        if leaf.game_is_done():
-            print("game is done")
-            print(leaf.room_state)
-            print(leaf.Env.room_state)
-        print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(act_traj_sim)}'\n" +\
-              15*" " + f"received total_return= {tot_return_of_sim}\n" +\
-              15*" " + f"heuristic manhattan= {leaf.Env.manhattan_heuristic()}\n" +\
-              15*" " + f"heuristic hungarian= {leaf.Env.hungarian_heuristic()}\n" + \
-              15 * " " + f"other heuristic  = {leaf.Env.other_heuristic()}\n" + \
-              15*" " + f"             return= {round(tot_return_of_sim - 0.8, 4)}")
+        # if leaf.game_is_done():
+        #     print("game is done")
+        #     print(leaf.room_state)
+        #     print(leaf.Env.room_state)
+        # print(15*" " + f"simulation_trajectory= '{leaf.Env.print_actions_as_chars(act_traj_sim)}'\n" +\
+        #       15*" " + f"received total_return= {tot_return_of_sim}\n" +\
+        #       15*" " + f"heuristic manhattan= {leaf.Env.manhattan_heuristic()}\n" +\
+        #       15*" " + f"heuristic hungarian= {leaf.Env.hungarian_heuristic()}\n" + \
+        #       15 * " " + f"other heuristic  = {leaf.Env.other_heuristic()}\n" + \
+        #       15*" " + f"             return= {round(tot_return_of_sim - 0.8, 4)}")
 
         return tot_return_of_sim + leaf.Env.other_heuristic() #leaf.Env.hungarian_heuristic()
 
@@ -364,7 +363,7 @@ class MctsNode:
 
             up_to (MctsNode): The node to which the value should be updated.
         """
-        print(f"                                backpropagate({value})")
+        #print(f"                                backpropagate({value})")
 
         # if self.is_expanded:
         #     self.revert_visits(up_to=up_to)
@@ -379,8 +378,8 @@ class MctsNode:
         """Propagates a {@value} estimation to the node {@up_to}."""
         self.N += 1
         self.W += value
-        self.Env.render_colored()
-        print(f"  backup_value(value={value}) -> self.W = {self.W}")
+        #self.Env.render_colored()
+        #print(f"  backup_value(value={value}) -> self.W = {self.W}")
         # Note: Q doesn't need to be set as in the paper.
         #       the property already handles the determination.
         if self.parent is None or self is up_to:
@@ -675,7 +674,6 @@ class MctsNode:
                 f"\n      * score={np.around(self.child_action_score, 3)}" + \
                 f"\n      * sp_uct={np.around(self.sp_uct, 3)}" + \
                 f"\n      * uct={np.around(self.uct, 3)}"
-
         print(node)
         for _, child in sorted(self.children.items()):
             child.print_tree(depth+1)
@@ -896,14 +894,15 @@ class Mcts:
             #     continue
 
             # If we encounter done-state We can backup the value right away.
-            if leaf_node.game_is_done():
-                print("game is done")
-                value = leaf_node.parent.W + leaf_node.Env.reward_finished#leaf_node.W # leaf_node.Env.get_return()
-                print(f"    value={value}  traj={leaf_node.action_traj}")
-                leaf_node.backpropagate(value, up_to=self.root)
-                return
-        print(f"leaf_node after {self.Env.print_actions_as_chars(leaf_node.action_traj)}")
-        leaf_node.Env.render_colored()
+            # THIS SHOULD BE ALREADY INCLUDE IN select_and_expand()
+            # if leaf_node.game_is_done():
+            #     #print("game is done")
+            #     value = leaf_node.parent.W + leaf_node.Env.reward_finished#leaf_node.W # leaf_node.Env.get_return()
+            #     #print(f"    value={value}  traj={leaf_node.action_traj}")
+            #     leaf_node.backpropagate(value, up_to=self.root)
+            #     return
+        #print(f"leaf_node after {self.Env.print_actions_as_chars(leaf_node.action_traj)}")
+        #leaf_node.Env.render_colored()
 
         # Evaluate the child node and backup the value estimate.
         if leaf_node:
@@ -941,7 +940,7 @@ class Mcts:
             #leaf_node.parent.child_W[leaf_node.prev_action] = tot_return
 
             # 4. Backpropagatiom step of the SP-MCTS.
-            print(f"backpropagate total_return={tot_return}")
+            #print(f"backpropagate total_return={tot_return}")
             leaf_node.backpropagate(value=tot_return, up_to=self.root)
 
             return
@@ -1029,9 +1028,9 @@ class Mcts:
             best_action (int): The best action which was taken according to the
                                MCTS.
         """
-        print("take_best_action() called!")
+        #print("take_best_action() called!")
         best_action = self.mcts()
-        print(f"best_action chosen is {best_action}")
+        #print(f"best_action chosen is {best_action}")
         if best_action == -1:
             return None, -1, True, {"mcts_giveup": "MCTS Gave up, board unsolvable. No moves where found from here."}
         observation, reward, done, info = self.Env.step(best_action)
@@ -1043,23 +1042,24 @@ class Mcts:
 
         rollouts = 0
         while rollouts < self.max_rollouts:
-            print(f"\n\nROLLOUT = {rollouts}")
+            if rollouts % 500 == 0:
+                print(f"rollout = {rollouts}  root.child_N = {mcts_copy.root.child_N}")
 
             mcts_copy.monte_carlo_tree_search()
             rollouts += 1
 
-        temp = mcts_copy.root.sp_uct - mcts_copy.root.sp_uct_second_term
-        print(f"after {rollouts} rollouts we have child_N: {mcts_copy.root.child_N}\n" +
-              21*" " + len(str(rollouts))*" " + f"and sp_uct: {mcts_copy.root.sp_uct}\n" +
-              21*" " + len(str(rollouts))*" " + f"and    uct: {mcts_copy.root.uct}\n" +
-              21*" " + len(str(rollouts))*" " + f"C=0 sp_uct: {temp}\n")
+        #temp = mcts_copy.root.sp_uct - mcts_copy.root.sp_uct_second_term
+        # print(f"after {rollouts} rollouts we have child_N: {mcts_copy.root.child_N}\n" +
+        #       21*" " + len(str(rollouts))*" " + f"and sp_uct: {mcts_copy.root.sp_uct}\n" +
+        #       21*" " + len(str(rollouts))*" " + f"and    uct: {mcts_copy.root.uct}\n" +
+        #       21*" " + len(str(rollouts))*" " + f"C=0 sp_uct: {temp}\n")
         # For the last action set C=0
         # best_child = np.nanargmax(mcts_copy.root.sp_uct -
         #                           mcts_copy.root.sp_uct_second_term)
         #best_child = np.nanargmax(mcts_copy.root.uct)
         best_child = np.nanargmax(mcts_copy.root.child_N)
-        mcts_copy.root.print_tree()
-        print(f"best_child={best_child}")
+        #mcts_copy.root.print_tree()
+        print(f"Mcts choose best_child={best_child} because child_N = {mcts_copy.root.child_N}")
         return best_child
 
 # def execute_episode_with_nnet(agentNetw, numSimulations, Env):

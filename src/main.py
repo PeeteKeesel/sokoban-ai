@@ -1,9 +1,10 @@
 import argparse
 import sys
-import json
 
+from absl import flags
 from pathlib import Path
-from algorithms.mcts import Mcts
+#from algorithms.mcts_nnet import Mcts
+from algorithms.mcts_raw import Mcts
 from src.algorithms import depth_first_search as dfs
 from src.algorithms import breadth_first_search as bfs
 from src.algorithms import uniform_cost_search as ucs
@@ -22,15 +23,25 @@ sys.path.append('my/path/to/module/folder')
 PATH = "../experimental_results"
 
 LEGAL_ACTIONS = np.array([1, 2, 3, 4])
+ACTION_MAP = {
+    'push up': "U",
+    'push down': "D",
+    'push left': "L",
+    'push right': "R",
+}
 
+# The following is only used for automatic rendering.
 RANDOM_SEED = [1]
 DIM_ROOM = 8
-NUM_BOXES = 3
+NUM_BOXES = 2
 
 # Set of levels to solve by different random seed values.
 LEVELS_TO_SOLVE = list(map(str, np.arange(1, 21, 1)))
 PATH_TO_TEST_BOARDS = "../boards/"
 TEST_BOARDS = [PATH_TO_TEST_BOARDS + "test_board_8x8_3"]
+
+MICROBAN_BOARDS = [PATH_TO_TEST_BOARDS + "microban_levels"]
+MICROBAN_LEVELS_TO_SOLVE = list(map(str, np.arange(1, 11, 1)))
 
 # ================================================================
 # def _run():
@@ -177,7 +188,19 @@ def create_environment(args):
     """
     env = None
     if args.file_name:
-        dim_room, n_boxes, soko_map = parse(filename=args.file_name)
+
+        if args.input_type == "raw":
+            dim_room, n_boxes, soko_map = parse_raw_input(args.file_name)
+        elif args.input_type == "human":
+            print(f"micro_level = {args.micro_levels}")
+            dim_room, n_boxes, soko_map, microban_level = \
+                parse_human_input(args.file_name,
+                                  args.micro_levels)
+        else:
+            return NotImplementedError(
+                f"args.input_type `{args.input_type}` is not implemented. "
+                f"Choose from [`human`, `raw`].")
+
         env = gym.make("MCTS-Sokoban-v0",
                        dim_room=dim_room,
                        max_steps=args.max_steps,
@@ -190,7 +213,6 @@ def create_environment(args):
                        num_boxes=args.num_boxes)
 
     make_reproducible(env, args.seeds)
-    env.render_colored()
 
     return env
 
@@ -223,6 +245,8 @@ def search_algorithms_solve(args):
                         f"`{ALGORITHM_NAME_A_STAR}`, "
                         f"`{ALGORITHM_NAME_IDA_STAR}`]")
 
+    if results == (None, None):
+        return
     results['dim_room'] = args.dim_room
     results['num_boxes'] = args.num_boxes
     results['seed'] = args.seeds
@@ -251,15 +275,19 @@ def mcts_solve(args):
 
     # Create the environment.
     env = create_environment(args)
-    env.render_colored()
 
     # Initialize the Monte-Carlo-Tree-Search.
+    # mcts = Mcts(Env=env,
+    #             simulation_policy=args.sim_policy,
+    #             max_rollouts=args.max_rollouts,
+    #             max_depth=args.max_depth,
+    #             num_parallel=args.num_parallel)
+    # mcts.initialize_search()
     mcts = Mcts(Env=env,
-                simulation_policy=args.sim_policy,
+                actions=LEGAL_ACTIONS,
                 max_rollouts=args.max_rollouts,
-                max_depth=args.max_depth,
-                num_parallel=args.num_parallel)
-    mcts.initialize_search()
+                max_depth=args.max_depth)
+
 
     # Must run this once at the start, so that noise injection actually affects
     # the first action of the episode.
@@ -271,7 +299,9 @@ def mcts_solve(args):
     start_time = time()
 
     a_traj = []
+    actions = []
     while True:
+        mcts.Env.render_colored()
         now = time()
         if now - start_time > time_limit:
             print(f"Time limit of {args.time_limit} reached.")
@@ -281,13 +311,31 @@ def mcts_solve(args):
 
         # Run the Monte-Carlo-Tree-Search for the current state and take the
         # best action after all simulations were performed.
-        _, reward, done, _, best_action = mcts.take_best_action()
-        print(100* "--")
-        print(100 * "--")
-        print(100 * "--")
-        print(100 * "--")
-        print(f"MAIN: MCTS choose action={best_action} and got reward={reward}.")
+        obs, reward, done, info, best_action = mcts.take_best_action()
         a_traj.append(best_action)
+
+        print(f"\nMCTS's decision: "
+              f"Move: {env.get_action_lookup_chars(best_action)}  "
+              f"Action: {best_action}\n"
+              f"{args.max_rollouts} simulations ({round(time()-start_time, 1)} sec)\n"
+              f"action trajectory: {env.print_actions_as_chars(a_traj)}\n\n")
+
+        if "action.name" in info:
+            actions.append(ACTION_MAP[info["action.name"]])
+        if done and "mcts_giveup" in info:
+            env.reset()
+            actions.clear()
+        elif done and info["all_boxes_on_target"]:
+            mcts.Env.render_colored()
+            print(f"Solved: Solution found!\n"
+                  f"        trajectory:   {mcts.Env.print_actions_as_chars(a_traj)}\n"
+                  f"        total reward: {reward}\n"
+                  f"        total time:   {round(time()-start_time, 1)} sec")
+            actions.append("Solved in {:.0f} mins".format((now - start_time)/60))
+            break
+        elif done and info["maxsteps_used"]:
+            env.reset()
+            actions.clear()
 
         if done:
             print(f"DONE: Solution found!\n"
@@ -303,8 +351,7 @@ def mcts_solve(args):
     # env.render(mode=args.render_mode)
     # sleep(30)
     # env.close()
-
-    mcts.root.print_tree()
+    print(f"total time = {time()-start_time}")
 
 
 def solve_game(argus):
@@ -338,11 +385,18 @@ if __name__ == "__main__":
 
     # Parse arguments.
     parser = argparse.ArgumentParser()
-    parser.add_argument("--file_name", type=np.str, default="", #TEST_BOARDS,
+    parser.add_argument("--file_name", type=np.str, default="", #"#MICROBAN_BOARDS,
                         nargs="+",
                         help="Name of file(s) to read Sokoban boards from.")
     parser.add_argument("--folder_name", type=np.str, default="",
                         help="Name of a folder in which Sokoban boards are.")
+    parser.add_argument("--input_type", type=np.str, default="human",
+                        help="Type of representation of the Sokoban boards "
+                             "in the file. Options are: "
+                             "[`human`, `raw`]")
+    parser.add_argument("--micro_levels", type=np.str,
+                        default=MICROBAN_LEVELS_TO_SOLVE, nargs="+",
+                        help="The Microban levels which should be solved.")
     parser.add_argument("--seeds", type=np.str, default=RANDOM_SEED,
                         nargs='+',
                         help="Seed(s) to handle the rendered board. "
@@ -353,9 +407,9 @@ if __name__ == "__main__":
                         help="Dimension of the Sokoban board")
     parser.add_argument("--num_boxes", type=np.int, default=NUM_BOXES,
                         help="Number of boxes on the board")
-    parser.add_argument("--max_rollouts", type=np.int, default=300,
+    parser.add_argument("--max_rollouts", type=np.int, default=8000,
                         help="Number of rollouts (simulations) per move")
-    parser.add_argument("--max_depth", type=np.int, default=30,
+    parser.add_argument("--max_depth", type=np.int, default=50,
                         help="Depth of each rollout (simulation)")
     parser.add_argument("--max_steps", type=np.int, default=120,
                         help="Moves before game is lost")
@@ -369,7 +423,7 @@ if __name__ == "__main__":
                              f"[`{SIMULATION_POLICIES['random']}`, "
                              f"`{SIMULATION_POLICIES['eps-greedy']}`]")
     parser.add_argument("--search_algo", type=np.str,
-                        default="",#SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR],
+                        default=SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR],
                         help="Alternative search algorithm to solve the game. "
                              "Implemented options: "
                             f"[`{SEARCH_ALGORITHMS[ALGORITHM_NAME_DFS]}`, "
@@ -378,12 +432,12 @@ if __name__ == "__main__":
                             f"`{SEARCH_ALGORITHMS[ALGORITHM_NAME_A_STAR]}`, "
                             f"`{SEARCH_ALGORITHMS[ALGORITHM_NAME_IDA_STAR]}`]")
     parser.add_argument("--heuristic", type=np.str,
-                        default=HEURISTICS["hungarian"],
+                        default=HEURISTICS["manhattan"],
                         help="Heuristic method for IDA* search algorithm. "
                              "Implemented options: "
                              f"[`{HEURISTICS['manhattan']}`, "
                              f"`{HEURISTICS['hungarian']}`]")
-    parser.add_argument("--time_limit", type=np.int, default=60,
+    parser.add_argument("--time_limit", type=np.int, default=300,
                         help="Time (in minutes) per board")
     parser.add_argument("--render_env", type=np.bool, default=False,
                         help="If the result environment should be rendered.")
@@ -394,6 +448,11 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
 
     # Solve the game.
+    # for micro_level in arguments.micro_levels:
+    #     arguments.micro_levels = "1"#micro_level # 31
+    #     arguments.seeds = int(RANDOM_SEED[0])
+    #     read_input_boards_and_solve(arguments)
+
     for seed in arguments.seeds:
         print(f"\n\nseed={seed}")
         arguments.seeds = int(seed)

@@ -85,7 +85,7 @@ class SokobanEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def step(self, action, observation_mode='rgb_array'):
+    def step(self, action, observation_mode='rgb_array', real=True):
         """
         Performs a step in the Sokoban environment.
 
@@ -104,6 +104,8 @@ class SokobanEnv(gym.Env):
                                    False, otherwise
             info        (dict):    diagnostic information useful for debugging.
         """
+        if real:
+            self.restore_env_states()
         assert action in ACTION_LOOKUP
         assert observation_mode in ['rgb_array', 'tiny_rgb_array', 'raw']
 
@@ -140,6 +142,8 @@ class SokobanEnv(gym.Env):
         if done:
             info["maxsteps_used"] = self._check_if_maxsteps()
             info["all_boxes_on_target"] = self._check_if_all_boxes_on_target()
+        if real:
+            self.backup_env_states()
 
         return observation, self.reward_last, done, info
 
@@ -148,7 +152,7 @@ class SokobanEnv(gym.Env):
         for a in actions:
             self.step(action=a)
 
-    # TODO: include this in mcts.py in perform_simulation and set gamma.
+    # TODO: include this in mcts_nnet.py in perform_simulation and set gamma.
     def update_total_return(self, depth, gamma):
         """
         Updates the total return. This should be called in every step of a
@@ -205,6 +209,39 @@ class SokobanEnv(gym.Env):
         # Try to move if no box to push, available
         else:
             return self._move(action), False
+
+    def _pull(self, action):
+        """
+        Moves the player to the next field, if it is not occupied.
+        :param action:
+        :return: Boolean, indicating a change of the room's state
+        """
+        change = CHANGE_COORDINATES[(action - 1) % 4]
+        new_position = self.player_position + change
+        current_position = self.player_position.copy()
+        pull_content_position = self.player_position - change
+
+        # Move player if the field in the moving direction is either
+        # an empty field or an empty box target.
+        if self.room_state[new_position[0], new_position[1]] in [1, 2]:
+            self.player_position = new_position
+            self.room_state[(new_position[0], new_position[1])] = 5
+            self.room_state[current_position[0], current_position[1]] = \
+                self.room_fixed[current_position[0], current_position[1]]
+
+            box_next_to_player = self.room_state[pull_content_position[0], pull_content_position[1]] in [3, 4]
+            if box_next_to_player:
+                # Move Box
+                box_type = 4
+                if self.room_fixed[current_position[0], current_position[1]] == 2:
+                    box_type = 3
+                self.room_state[current_position[0], current_position[1]] = box_type
+                self.room_state[pull_content_position[0], pull_content_position[1]] = \
+                    self.room_fixed[pull_content_position[0], pull_content_position[1]]
+
+            return True, box_next_to_player
+
+        return False, False
 
     def _move(self, action):
         """
@@ -332,7 +369,7 @@ class SokobanEnv(gym.Env):
         """
         for x in range(self.room_state.shape[0]):
             for y in range(self.room_state.shape[1]):
-                end = "" if y < self.room_state.shape[0] - 1 else " "
+                end = "" if y < self.room_state.shape[1] - 1 else " "
                 bg_color = BG_COLORS[self.room_state[x][y]]
                 color = "white" if bg_color == "black" else "black"
                 if self.room_state[x][y] == 5:

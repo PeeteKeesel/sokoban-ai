@@ -1,7 +1,7 @@
 import numpy as np
 
 from tests.set_up_env import SetUpEnv
-from src.algorithms.mcts import execute_episode
+from src.algorithms.mcts_nnet import execute_episode
 
 
 RANDOM_SEED = 0

@@ -1,1 +1,25 @@
 
+--------------------------------------------------------------------------------
+idastar(): solution-found!
+outcome:    WIN
+steps:      17
+trajectory: DURURDDRDDLLUULUR
+discovered: 4994
+repeated:   2478
+explored:   0
+dim_room:   (8, 8)
+num_boxes:  3
+seed:       1
+time:       131.762 s
+--------------------------------------------------------------------------------
+idastar(): solution-found!
+outcome:    WIN
+steps:      9
+trajectory: DDLDDRRUL
+discovered: 326
+repeated:   167
+explored:   0
+dim_room:   (8, 8)
+num_boxes:  1
+seed:       1
+time:       9.169 s

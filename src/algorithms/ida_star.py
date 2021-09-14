@@ -175,6 +175,7 @@ def ida_star_search(env, time_limit: int, heuristic: str, metrics: dict=None,
             current_time += time() - start_time_inner
             metrics['time'] = current_time
 
+        print(metrics)
         # print(f"nodes checked: {nodes}")
         # print(f"iteration: {it}")
         it = it + 1

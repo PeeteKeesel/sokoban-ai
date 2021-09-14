@@ -1,5 +1,7 @@
 import time
 
+from collections import Counter
+
 
 ###############################################################################
 # Global variables
@@ -33,9 +35,23 @@ SEARCH_ALGORITHMS = {ALGORITHM_NAME_DFS: "dfs",
 HEURISTICS = {"manhattan": "manhattan",
               "hungarian": "hungarian"}
 
-# Different types of simulation/rollout policies used in mcts.py
+# Different types of simulation/rollout policies used in mcts_nnet.py
 SIMULATION_POLICIES = {"random": "random",
                        "eps-greedy": "eps-greedy"}
+
+WALL_SYMBOL = '#'
+BOX_SYMBOL = '$'
+TARGET_SYMBOL = '.'
+PLAYER_SYMBOL = '@'
+EMPTY_SYMBOL = ' '
+
+SYMBOLS = {
+    "wall": WALL_SYMBOL,
+    "box": BOX_SYMBOL,
+    "target": TARGET_SYMBOL,
+    "player": PLAYER_SYMBOL,
+    "empty": EMPTY_SYMBOL
+}
 
 LEVEL_FORMAT = {
     0: '#',  # wall
@@ -281,7 +297,7 @@ def print_search_algorithm_results(results):
 # Parse the Sokoban environment from a file.
 ###############################################################################
 
-def read_sokoban_input(filename):
+def read_raw_input(filename):
     """
     This reads a file containing a information about a Sokoban map and returns
     sets of tuples containing the size of the board, positions of walls, boxes,
@@ -346,8 +362,8 @@ def read_sokoban_input(filename):
 # @return map: 2d list containing the board with
 #  '#' for walls, '$' for boxes, '.' for storages, '@' for player, and ' ' for empty spaces
 # parse sokoban input and return the dimensions of board, number of boxes, and map
-def parse(filename):
-    size, walls, boxes, targets, start = read_sokoban_input(filename=filename)
+def parse_raw_input(filename):
+    size, walls, boxes, targets, start = read_raw_input(filename=filename)
     print(f"size= {size}\n"
           f"walls={walls}\n"
           f"boxes={boxes}\n"
@@ -358,13 +374,82 @@ def parse(filename):
     for row in range(1, rows+1):
         for col in range(1, cols+1):
             if (row, col) in walls:
-                mapping_file_to_board[row-1][col-1] = "#"
+                mapping_file_to_board[row-1][col-1] = SYMBOLS["wall"]
             elif (row, col) in boxes:
-                mapping_file_to_board[row-1][col-1] = "$"
+                mapping_file_to_board[row-1][col-1] = SYMBOLS["box"]
             elif (row, col) in targets:
-                mapping_file_to_board[row-1][col-1] = "."
+                mapping_file_to_board[row-1][col-1] = SYMBOLS["target"]
             elif (row, col) == start:
-                mapping_file_to_board[row-1][col-1] = "@"
+                mapping_file_to_board[row-1][col-1] = SYMBOLS["player"]
             else:
-                mapping_file_to_board[row-1][col-1] = " "
+                mapping_file_to_board[row-1][col-1] = SYMBOLS["empty"]
     return (rows, cols), len(boxes), mapping_file_to_board
+
+###############################################################################
+# Parse the Microban boards from a file.
+###############################################################################
+
+def read_human_input(filename, level_name):
+    with open(filename, 'r') as f:
+
+        # Search for the Microban level in the file.
+        found_level_name = ""
+        while level_name not in found_level_name:
+            found_level_name = f.readline()
+
+        # Read as long as no empty line if found and get the number of boxes.
+        lines = []
+        while True:
+            line = f.readline()
+            if line not in ['\n', '\n\r']:
+                lines.append([char for char in line if char != '\n'])
+            else:
+                break
+
+        # Get row and column size.
+        row = len(lines)
+        col = max([len(r) for r in lines])
+
+        for i in range(len(lines)):
+            # The length of the read line is smaller than the maximal length,
+            # thus, add walls to the right such that the length is fitting.
+            col_len_actual = len(lines[i])
+            if col_len_actual < col:
+                lines[i] += SYMBOLS["wall"] * (col-col_len_actual)
+
+            l = lines[i]
+            if SYMBOLS["empty"] in l and SYMBOLS["wall"] in l:
+                idx_first_wall = l.index(SYMBOLS["wall"])
+                while l.index(SYMBOLS["empty"]) < idx_first_wall:
+                    l[l.index(SYMBOLS["empty"])] = SYMBOLS["wall"]
+                    if SYMBOLS["empty"] not in l:
+                        break
+
+        occurences = Counter(char for line in lines for char in list(line))
+
+        return (row, col), occurences[SYMBOLS["box"]], lines
+
+
+def parse_human_input(filename, level_name):
+    (rows, cols), no_boxes, mapping_file_to_board = read_human_input(filename,
+                                                                     level_name)
+    return (rows, cols), no_boxes, mapping_file_to_board, level_name
+
+
+def render_colored(room_state):
+    """
+    Render the room state in colored squares to the terminal.
+    """
+    for x in range(room_state.shape[0]):
+        for y in range(room_state.shape[1]):
+            end = "" if y < room_state.shape[0] - 1 else " "
+            bg_color = BG_COLORS[room_state[x][y]]
+            color = "white" if bg_color == "black" else "black"
+            if room_state[x][y] == 5:
+                colored_print(" P ", "red", bg_color, end)
+            elif room_state[x][y] == 0:
+                colored_print(f"   ", color, bg_color, end)
+            else:
+                colored_print(f" {room_state[x][y]} ", color, bg_color, end)
+
+    return

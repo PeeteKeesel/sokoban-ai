@@ -1,7 +1,7 @@
 import numpy as np
 
 from tests.set_up_env import SetUpEnv
-from src.algorithms.mcts import MctsNode
+from src.algorithms.mcts_nnet import MctsNode
 from src.utils import ACTION_LOOKUP
 
 

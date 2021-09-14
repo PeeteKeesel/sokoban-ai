@@ -57,6 +57,7 @@ class MctsSokobanEnv(SokobanEnv):
             self.num_env_steps = 0
             self.reward_last = 0
             self.no_boxes_on_target = 0
+            self.backup_env_states()
 
             starting_observation = self.render(render_mode)
             return starting_observation
@@ -108,13 +109,6 @@ class MctsSokobanEnv(SokobanEnv):
 
         return np.array(room_fixed), np.array(room_state), box_mapping
 
-    def backup_env_states(self):
-        self.reward_last_backup = self.reward_last
-        self.no_boxes_on_target_backup = self.no_boxes_on_target
-        self.num_env_steps_backup = self.num_env_steps
-        self.player_position_backup = self.player_position.copy()
-        self.room_state_backup = self.room_state.copy()
-
     def get_room_state(self):
         return self.room_state.copy()
 
@@ -124,6 +118,18 @@ class MctsSokobanEnv(SokobanEnv):
     def get_current_state(self):
         current_state = (self.no_boxes_on_target, self.num_env_steps, self.player_position.copy(), self.room_state.copy())
         return current_state
+
+    # @param action: an int representing the action to take in this step
+    # @param state: a 4-tuple containing boxes on target, steps taken so far, player position, and room_state
+    # @return: a state of the same form, an observation, reward from taking the step, boolean indicating if the game is
+    # done, and info about the step
+    def simulate_step(self, action, state):
+        boxes_on_target, num_env_steps, player_position, room_state = state
+        self.no_boxes_on_target, self.num_env_steps, self.player_position, self.room_state \
+            = boxes_on_target, num_env_steps, player_position.copy(), room_state.copy()
+        observation, reward_last, done, info = self.step(action, observation_mode="raw", real=False)
+        new_state = (self.no_boxes_on_target, self.num_env_steps, self.player_position, self.room_state)
+        return new_state, observation, reward_last, done, info
 
     def get_children(self):
         """
@@ -214,15 +220,20 @@ class MctsSokobanEnv(SokobanEnv):
             children_envs.append(env_copy)
         return children_envs
 
-
     def print_room_state_using_format(self):
         print_room_state(convert_room_state_to_output_format(np.copy(self.room_state).astype('str')))
 
     def get_boxes_not_on_target(self):
         return set(tuple(box) for box in np.argwhere(self.room_state == 4))
 
+    def get_boxes_on_target(self):
+        return set(tuple(box) for box in np.argwhere(self.room_state == 3))
+
     def get_goal_states(self):
         return set(tuple(box) for box in np.argwhere(self.room_state == 2))
+
+    def get_original_goal_states(self):
+        return set(tuple(box) for box in np.argwhere(self.room_fixed == 2))
 
     def manhattan_heuristic(self):
         """
@@ -252,7 +263,7 @@ class MctsSokobanEnv(SokobanEnv):
                                          for box in boxes_not_on_target )
         #print(f"   sum_min_dist_boxes_target: {sum_min_dist_boxes_target}")
 
-        return min_dist_player_box + sum_min_dist_boxes_target
+        return (min_dist_player_box + sum_min_dist_boxes_target) * self.penalty_for_step
 
     def hungarian_heuristic(self):
         node = self.room_state
@@ -277,7 +288,7 @@ class MctsSokobanEnv(SokobanEnv):
         #print(hungarian_table)
         hungarian = Hungarian()
         hungarian.calculate(hungarian_table)
-        return hungarian.get_total_potential()
+        return hungarian.get_total_potential() * self.penalty_for_step
 
     def other_heuristic(self):
         total = 0
@@ -305,10 +316,152 @@ class MctsSokobanEnv(SokobanEnv):
     def is_done(self):
         return self._check_if_all_boxes_on_target() or self._check_if_maxsteps()
 
+    def is_out_of_bounds(self, point):
+        return point[0] >= self.room_state.shape[0] or \
+                point[1] >= self.room_state.shape[1] or \
+                point[0] < 0 or point[1] < 0
+
+    def is_blocked(self, point):
+        if self.is_out_of_bounds(point) or \
+                self.room_state[point[0], point[1]] == 0:
+            return True
+        return False
+
+    def is_deadsquare_deadlock_horizontal(self, box_pos):
+        """
+        Map zones where, despite not being a simple deadlock (corner), if a box is pushed into these positions,
+        it cannot be removed from this zone. Verification done on one line (horizontally).
+        """
+        x_box_pos, y_box_pos = box_pos
+        #print(f"\n\nx={x_box_pos}  y={y_box_pos}")
+
+        # The positions in the extremities of the map are not considered for this deadSquares
+        if self.is_out_of_bounds((x_box_pos, y_box_pos-1)) or \
+                self.is_out_of_bounds((x_box_pos, y_box_pos+1)):
+            return False
+
+        is_blocked_left, is_blocked_right = False, False
+        goal_in_row, row_movable = False, []
+
+        # It is checked that the position in question is horizontally blocked, i.e.
+        # that to its right and left there will sooner or later be a wall.
+        for y_map, row in enumerate(self.room_state):
+            # print(f"y_map={y_map}  row={row}")
+
+            # Starting at y_map=0, it runs to the y corresponding to the position in question
+            if y_map == x_box_pos:
+                # print(f"y_map={y_map}")
+                add_left, add_right = False, True
+
+                # The map columns are then scrolled to that specific y
+                for x_map, col in enumerate(row):
+                    # print(f"  x_map={x_map}  col={col}")
+
+                    # Again discarding the situations where we are at the extremities of the map
+                    if not self.is_out_of_bounds((x_map, y_map-1)) or \
+                        not self.is_out_of_bounds((x_map, y_map+1)):
+                        # print(f"     (x_map, y_map)=({x_map}, {y_map})")
+
+                        # To the left of the position in question,
+                        if x_map < y_box_pos:
+
+                            # If a wall has already been found in this line(y), append the new position where a wall was found
+                            if add_left:
+                                row_movable.append((x_map, y_map))
+
+                            # If a wall is found, addLeft is set to true for future search in this row(y) and the
+                            # rowMovable list is initialised. Besides, the box is set as blocked to the left
+                            if col == 0:#SYMBOLS["wall"]:
+                                add_left = True
+                                row_movable = []
+                                is_blocked_left = True
+
+                        # To the right of the position in question, with the same logic as described above
+                        if x_map >= y_box_pos:
+                            if col == 0:#SYMBOLS["wall"]:
+                                add_right = False
+                                is_blocked_right = True
+                            if add_right:
+                                row_movable.append((x_map, y_map))
+
+        # print(f"row_movable={row_movable}")
+        # Check if there are goals on this line
+        goalInRow = any([(x, y) in self.get_original_goal_states() for (x, y) in row_movable])
+
+        #Check if the positions of this line that are deadlock candidates are deadlocked from above
+        isBlockedTop = all(
+            [self.room_state[x, y-1] == 0 for (x, y) in row_movable if y-1 >= 0])
+
+        #Check if the positions of this deadlock candidate line are deadlocked underneath
+        isBlockedBottom = all([self.room_state[x, y+1]
+                               == 0 for (x, y) in row_movable if y+1 < self.room_state.shape[1]])
+
+        return is_blocked_left and is_blocked_right \
+               and not goalInRow and (isBlockedTop or isBlockedBottom)
+
+    def is_deadsquare_deadlock_vertical(self, box_pos):
+        """
+        Map zones where, despite not being a simple deadlock (corner), if a box is pushed into these positions,
+        it cannot be removed from this zone. Verification done on one line (vertically).
+        """
+        x_box_pos, y_box_pos = box_pos
+        #print(f"\n\nx={x_box_pos}  y={y_box_pos}")
+        # print(self.room_state)
+
+        # The positions in the extremities of the map are not considered for this deadSquares
+        if self.is_out_of_bounds((x_box_pos-1, y_box_pos)) or \
+                self.is_out_of_bounds((x_box_pos+1, y_box_pos)):
+            return False
+
+        is_blocked_top, is_blocked_bottom = False, False
+        goal_in_col, col_movable = False, []
+        pos_valid = []
+
+        for y_map, row in enumerate(self.room_state):
+            for x_map, column in enumerate(row):
+                if x_map == y_box_pos:
+                    pos_valid.append(((y_map, row), (x_map, column)))
+
+        add_top, add_bottom = False, True
+        for (y_map, row), (x_map, column) in pos_valid:
+            if not self.is_out_of_bounds((x_map-1, y_map)) or \
+                    not self.is_out_of_bounds((x_map+1, y_map)):
+                if y_map < x_box_pos:
+                    if add_top:
+                        col_movable.append((x_map, y_map))
+                    if column == 0:
+                        add_top = True
+                        col_movable = []
+
+                    if self.is_blocked((x_box_pos, y_map)):
+                        is_blocked_top = True
+                if y_map >= x_box_pos:
+                    if column == 0:
+                        add_bottom = False
+                    if add_bottom:
+                        col_movable.append((x_map, y_map))
+
+                    if self.is_blocked((x_box_pos, y_map)):
+                        is_blocked_bottom = True
+
+        goal_in_col = any([(x, y) in self.get_original_goal_states() for (x, y)
+                           in col_movable])
+        is_blocked_left = all([self.room_state[x-1, y] == 0 for (x, y)
+                               in col_movable if x-1 >= 0])
+        is_blocked_right = all([self.room_state[x+1, y] == 0 for (x, y)
+                                in col_movable if x+1 < self.room_state.shape[0]])
+
+        return is_blocked_top and is_blocked_bottom \
+               and not goal_in_col and (is_blocked_left or is_blocked_right)
+
     def is_deadlock(self):
         if self.new_box_position is not None and \
             self.new_box_position not in self.box_mapping and \
             self._in_corner():
+            return True
+        elif self.new_box_position is not None and \
+                (self.is_deadsquare_deadlock_horizontal(self.new_box_position) or
+                 self.is_deadsquare_deadlock_vertical(self.new_box_position)):
             return True
         return False
 
@@ -327,9 +480,12 @@ class MctsSokobanEnv(SokobanEnv):
 
         envAfterAction = deepcopy(self)
         _, rew, _, _ = envAfterAction.step(action=actionToTake)
+        #print(f"  action={actionToTake}")
+        #envAfterAction.render_colored()
+        #print(envAfterAction.is_deadlock())
 
-        if envAfterAction.is_deadlock() and \
-                np.abs(envAfterAction.reward_last - self.reward_last) < envAfterAction.reward_box_on_target:
+        if envAfterAction.is_deadlock(): #\ and
+                # np.abs(envAfterAction.reward_last - self.reward_last) <= envAfterAction.reward_box_on_target:
             return True
         return False
 
@@ -349,8 +505,9 @@ class MctsSokobanEnv(SokobanEnv):
         """Returns all feasible actions excluding deadlock actions."""
         feasible_actions = self.get_feasible_actions()
         deadlocks = self.deadlock_detection_multiple(feasible_actions)
+        #print(f"deadlocks= {deadlocks}")
         idxsToRemove = []
-        print(self.action_trajectory)
+        #print(self.action_trajectory)
         for i, a in enumerate(feasible_actions):
             # The feasible action results in a deadlock.
             if deadlocks[i]:
@@ -380,6 +537,20 @@ class MctsSokobanEnv(SokobanEnv):
             _, reward, _, _ = env_copy.step(action)
             rewards.append(reward)
         return feasible_actions[np.argmax(rewards)]
+
+    def backup_env_states(self):
+        self.reward_last_backup = self.reward_last
+        self.no_boxes_on_target_backup = self.no_boxes_on_target
+        self.num_env_steps_backup = self.num_env_steps
+        self.player_position_backup = self.player_position.copy()
+        self.room_state_backup = self.room_state.copy()
+
+    def restore_env_states(self):
+        self.reward_last = self.reward_last_backup
+        self.no_boxes_on_target = self.no_boxes_on_target
+        self.num_env_steps = self.num_env_steps_backup
+        self.player_position = self.player_position_backup
+        self.room_state = self.room_state_backup
 
     @staticmethod
     def get_obs_for_states(states):

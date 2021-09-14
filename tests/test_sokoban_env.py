@@ -1,7 +1,9 @@
 import numpy as np
+import gym
 
 from tests.set_up_env import SetUpEnv
-from utils import manhattan_distance
+from utils import manhattan_distance, parse_human_input
+from algorithms.mcts_raw import Mcts
 
 
 RANDOM_SEED = 0
@@ -238,6 +240,49 @@ class TestSokobanEnv(SetUpEnv):
 
         self.assertFalse(self.mock_env.deadlock_detection(actionToTake=1))
         #print(self.mock_env.get_non_deadlock_feasible_actions())
+
+    def test_other_deadlock(self):
+        dim_room, n_boxes, soko_map, microban_level = \
+            parse_human_input("../boards/microban_levels",
+                              "31")
+
+        env = gym.make("MCTS-Sokoban-v0",
+                       dim_room=dim_room,
+                       max_steps=120,
+                       num_boxes=n_boxes,
+                       original_map=soko_map)
+        env.render_colored()
+
+        env.steps([2,3,2,4,4]) #, 2,4,4,1,1,3])
+
+        mcts = Mcts(Env=env,
+                    actions=[1,2,3,4],
+                    max_rollouts=4000,
+                    max_depth=30)
+
+        mcts.Env.render_colored()
+
+        acts = mcts.sensible_actions(mcts.Env.get_current_state()[2],
+                                    mcts.Env.get_current_state()[3],
+                                    mcts.last_pos,
+                                    mcts.moved_box)
+        print(f"sensible_actions: {acts}\n" + 100*"-")
+
+        gacts = mcts.Env.get_non_deadlock_feasible_actions()
+        print(f"sensible_actions utils: {gacts}")
+
+        print(100*"++")
+        mcts.Env.steps([2,4,4,1,1,3])
+        mcts.Env.render_colored()
+
+        acts = mcts.sensible_actions(mcts.Env.get_current_state()[2],
+                                    mcts.Env.get_current_state()[3],
+                                    mcts.last_pos,
+                                    mcts.moved_box)
+        print(f"sensible_actions: {acts}\n" + 100*"-")
+
+        gacts = mcts.Env.get_non_deadlock_feasible_actions()
+        print(f"sensible_actions utils: {gacts}")
 
     ###########################################################################
     # static-methods                                                          #

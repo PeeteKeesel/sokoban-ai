@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-from algorithms.mcts import Mcts
+from algorithms.mcts_nnet import Mcts
 from gym_sokoban.envs import MctsSokobanEnv
 from tests.testing_environment import unittest
 
